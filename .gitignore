@@ -1,0 +1,5 @@
+Preprocessing/images/
+Preprocessing/labels/
+venv/
+.idea/
+*/__pycache__/*
