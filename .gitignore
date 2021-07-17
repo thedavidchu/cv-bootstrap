@@ -1,5 +1,5 @@
-Preprocessing/images/
-Preprocessing/labels/
+/images/
+/labels/
 venv/
 .idea/
 */__pycache__/*
