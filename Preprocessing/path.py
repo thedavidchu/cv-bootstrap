@@ -17,4 +17,4 @@ def get_image_paths(dir_path: str):
 
 
 if __name__ == '__main__':
-    image_paths = get_image_paths('images')
+    image_paths = get_image_paths('../images/')
