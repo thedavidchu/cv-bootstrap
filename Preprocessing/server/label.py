@@ -205,7 +205,7 @@ class Label:
 
 
 class ImageLabels:
-    def __init__(self, image: np.ndarray):
+    def __init__(self, image_shape: tuple):
         """
         # Notes
         1. Assumes a rectangular image with height and width
@@ -213,8 +213,7 @@ class ImageLabels:
         2. Channel dimension is optional.
         """
         # Image properties
-        self.image = np.ndarray
-        self.shape = image.shape
+        self.shape = image_shape
 
         # List of all labels
         self.store_labels = []
@@ -226,6 +225,10 @@ class ImageLabels:
         # Information about current label
         self.current_label = Label(self.store_labels, 0, self.shape)
 
+    # ==================== CONDITIONS ==================== #
+    def is_empty(self):
+        return not self.store_labels
+
     # ==================== CHANGE MODES ==================== #
     def change_draw_mode(self, new_mode: DrawingMode):
         self.draw_mode = new_mode
@@ -233,7 +236,19 @@ class ImageLabels:
     def change_geo_mode(self, new_mode: GeometryMode):
         self.geo_mode = new_mode
 
-    # ==================== LABEL ==================== #
+    # ==================== LABELING ==================== #
+    def add_label_tag(self, new_tag: str):
+        self.current_label.add_tag(new_tag)
+
+    def add_label_point(
+        self,
+        x: (shapely.geometry.Point, int, float),
+        y: (int, float) = None
+    ):
+        # Error messaging will be down the stack
+        self.current_label.add_point(x, y)
+
+    # ==================== LABEL MANIPULATION ==================== #
     def __can_change_label(self):
         return not self.current_label.need_save()
 
@@ -255,7 +270,7 @@ class ImageLabels:
         if not self.__can_change_label():
             warnings.warn(_UNSAVED_LABEL_WARNING)
             return
-        elif len(self.store_labels) == 0:
+        elif self.is_empty():
             return
         else:
             next_index = (self.current_label.index + 1) % len(self.store_labels)
@@ -265,7 +280,7 @@ class ImageLabels:
         if not self.__can_change_label():
             warnings.warn(_UNSAVED_LABEL_WARNING)
             return
-        elif len(self.store_labels) == 0:
+        elif self.is_empty():
             return
         else:
             next_index = (self.current_label.index - 1) % len(self.store_labels)
@@ -278,5 +293,3 @@ class ImageLabels:
             if point.within(label.geometry):
                 self.current_label = label
                 return
-
-
