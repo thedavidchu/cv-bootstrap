@@ -31,3 +31,8 @@ class Image:
     def rotate(self, theta):
         raise NotImplementedError('cannot rotate shapes yet.')
 
+
+class Images:
+    def __init__(self):
+        pass
+

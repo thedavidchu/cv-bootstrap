@@ -39,7 +39,7 @@ BACKSPACE: Delete previous point
 TAB: Cycle to next labelled part
 """
 import shapely.geometry
-from modes import DrawingMode, GeometryMode, LabelMode
+from Preprocessing.server.modes import DrawingMode, GeometryMode, LabelMode
 import numpy as np
 import warnings
 
