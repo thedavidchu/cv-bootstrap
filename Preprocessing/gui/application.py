@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.filedialog  # Necessary
 from PIL import Image, ImageTk
 from Preprocessing.server.path import get_image_paths, filter_image_paths
+from Preprocessing.server.label import ImageLabels
 import warnings
 
 
@@ -16,6 +17,7 @@ class Display:
         self.image_paths = []
         self.image_index = -1
 
+        self.image_label = ImageLabels
         self.image = None
         self.panel = None
 
@@ -33,6 +35,8 @@ class Display:
 
         # Add menu
         self.menubar = tk.Menu(self.root)
+
+        # File menu
         file_menu = tk.Menu(self.menubar, tearoff=0)
         file_menu.add_command(label='New', command=sassy_warning)
         file_menu.add_command(label='Open directory', command=self.open_dir)
@@ -42,21 +46,23 @@ class Display:
         file_menu.add_command(label='Exit', command=self.root.destroy)
         self.menubar.add_cascade(label='File', menu=file_menu)
 
+        # Edit menu
         edit_menu = tk.Menu(self.menubar, tearoff=0)
         edit_menu.add_command(label='Cursor')
         edit_menu.add_command(label='Add point')
         edit_menu.add_command(label='Add line')
         edit_menu.add_command(label='Add polygon')
-        edit_menu.add_command(label='Add point')
-        edit_menu.add_command(label='Add point')
-
+        edit_menu.add_command(label='Add custom')
+        edit_menu.add_command(label='Add full')
+        edit_menu.add_command(label='Add tag')
         self.menubar.add_cascade(label='Edit', menu=edit_menu)
 
+        # Help menu
         help_menu = tk.Menu(self.menubar, tearoff=0)
         help_menu.add_command(label='Help...', command=sassy_warning)
+        self.menubar.add_cascade(label='Help', menu=help_menu)
 
         root.config(menu=self.menubar)
-
 
     def open_dir(self):
         # Hide workspace window
