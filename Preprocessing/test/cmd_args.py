@@ -1,8 +1,8 @@
 import argparse
 
 
-import path
-import plot
+import Preprocessing.server.path as path
+import Preprocessing.gui.plot as plot
 
 
 def _get_cmd_args():
