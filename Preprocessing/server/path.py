@@ -16,5 +16,14 @@ def get_image_paths(dir_path: str):
     return image_paths
 
 
+def filter_image_paths(image_paths):
+    return list(
+        filter(
+            lambda path: re.match(r'^.*\.(jpe?g|png)$', path.lower()),
+            image_paths
+        )
+    )
+
+
 if __name__ == '__main__':
     image_paths = get_image_paths('../images/')
