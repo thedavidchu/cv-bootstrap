@@ -1,15 +1,16 @@
 from enum import Enum, auto
 
 
-class DrawingMode(Enum):
+class CursorMode(Enum):
     """
     Define the drawing mode.
 
-    POINTER = 0: On click, select a point or shape
-    ONCLICK = 1: On click, drop a point
-    CONTINUOUS = 2: On click, continuously lay points
+    SELECT = 0: On click, select a point or shape
+    CLICK = 1: On click, drop a point
+    DRAG = 2: On click, continuously lay points
     """
     NONE = auto()
+    SELECT = NONE
     CLICK = auto()
     DRAG = auto()
 
@@ -32,6 +33,7 @@ class GeometryMode(Enum):
     LINE = auto()    # Not supported
     POLYGON = auto()
     FULL = auto()
+
     CUSTOM = auto()     # Not supported
 
 
@@ -40,7 +42,6 @@ class LabelMode(Enum):
     ## Notes
     1. When you edit this, check class::Label.
     """
-
 
     NONE = auto()  # New and blank
     NEW = auto()    # New, needs saving

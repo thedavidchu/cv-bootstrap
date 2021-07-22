@@ -39,7 +39,7 @@ BACKSPACE: Delete previous point
 TAB: Cycle to next labelled part
 """
 import shapely.geometry
-from Preprocessing.server.modes import DrawingMode, GeometryMode, LabelMode
+from Preprocessing.server.modes import CursorMode, GeometryMode, LabelMode
 import numpy as np
 import warnings
 
@@ -219,7 +219,7 @@ class ImageLabels:
         self.store_labels = []
 
         # Modes
-        self.draw_mode = DrawingMode.NONE
+        self.draw_mode = CursorMode.NONE
         self.geo_mode = GeometryMode.NONE
 
         # Information about current label
@@ -230,7 +230,7 @@ class ImageLabels:
         return not self.store_labels
 
     # ==================== CHANGE MODES ==================== #
-    def change_draw_mode(self, new_mode: DrawingMode):
+    def change_draw_mode(self, new_mode: CursorMode):
         self.draw_mode = new_mode
 
     def change_geo_mode(self, new_mode: GeometryMode):
