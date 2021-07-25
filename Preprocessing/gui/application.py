@@ -15,23 +15,31 @@ class Display:
         self.root = root
         self.root.title('Label Images')
 
+        # Menu bar
         self.top_menubar = None
-        self.image_frame = tk.LabelFrame(self.root)
-        self.tag_frame = tk.LabelFrame(self.root)
+        # Top frame
+        self.top_frame = tk.LabelFrame(self.root)
+        self.image_frame = tk.LabelFrame(self.top_frame)
+        self.tag_frame = tk.LabelFrame(self.top_frame)
+        # Bottom frame
         self.bottom_frame = tk.LabelFrame(self.root)
-
+        # Pack frames
+        self.bottom_frame.pack(anchor=tk.SW, side=tk.BOTTOM, fill=tk.X)
+        self.top_frame.pack(anchor=tk.N, fill='both')
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
         self.image_frame.pack(anchor=tk.NW)
-        self.bottom_frame.pack(anchor=tk.SW, side=tk.BOTTOM, fill=tk.X)
 
+        # Modes
         self.cursor_mode = CursorMode.NONE
         self.geometry_mode = GeometryMode.NONE
 
+        # Image
         # image_index = -1 => start at beginning
         self.image_paths = []
         self.label_paths = []
         self.image_index = -1
 
+        # Labels
         self.image_label = ImageLabels
         self.image = None
         self.panel = None
@@ -140,7 +148,6 @@ class Display:
         tk.Label(frame_label, text='Tags/Categories').grid(row=0)
         tk.Entry(frame_label).grid(row=1)
 
-
     def display_workspace(self):
         # Do on __init__?
         self.root.geometry('500x500')
@@ -149,7 +156,7 @@ class Display:
         # Bottom menubar
         self._cursor_menubar()
         self._geometry_menubar()
-        self._transform_menubar()
+        self._transform_menubar()   # Note implemented
 
         # Right tag bar
         self._tag_menubar()
@@ -168,8 +175,9 @@ class Display:
                 self.label_paths = get_paths((dir_path, filter_label_paths))
             else:
                 raise ValueError('invalid filter function!')
-        except:
+        except NotADirectoryError:
             warnings.warn('invalid directory chosen')
+        except
         # Show workspace window
         self.root.deiconify()
         # Reset image index
