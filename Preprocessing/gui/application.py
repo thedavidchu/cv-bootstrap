@@ -4,7 +4,6 @@ TODO
 2. Move stuff to other functions/ classes. Namely, images and labels.
 """
 
-
 import tkinter as tk
 import tkinter.filedialog  # Necessary
 import json
@@ -18,6 +17,7 @@ from shapely import geometry as g
 SASSY_WARNING = lambda: warnings.warn('lol this does not do anything!')
 _TESTING_MODE = True
 
+
 def save_as_json(to_save: dict):
     # Convert wkt to well-known text
     for abs_image_path, labels in to_save.items():
@@ -27,6 +27,7 @@ def save_as_json(to_save: dict):
             label['wkt'] = label['wkt'].wkt
     with open('../../labels/labels.json', 'w') as f:
         json.dump(to_save, f, indent=4)
+
 
 class Display:
     def __init__(self, root):
@@ -88,7 +89,7 @@ class Display:
         file_menu.add_command(label='Open label directory', command=self._open_label_dir)
         file_menu.add_command(label='Open label file', command=self._open_label_file)
         file_menu.add_separator()
-        file_menu.add_command(label='Save Labels', command=SASSY_WARNING)
+        file_menu.add_command(label='Save Labels', command=self.save_geometry)
         file_menu.add_separator()
         file_menu.add_command(label='Exit', command=self.root.destroy)
         self.top_menubar.add_cascade(label='File', menu=file_menu)
@@ -267,8 +268,10 @@ class Display:
             self.canvas = tk.Canvas(master=self.top_frame, width=500, height=500)
             self.canvas.pack(side=tk.LEFT, anchor=tk.NW)
             self.canvas.bind("<B1-Motion>", self.draw_point_and_line)
+            self.root.bind("<Delete>", self.delete_label)
             self.root.bind("<BackSpace>", self.delete_point)
             self.root.bind("<Return>", self.save_points)
+            self.root.bind("<Control-Key-s>", self.save_geometry)
             ## END TO DELETE
             self.image = ImageTk.PhotoImage(Image.open(image_path))
             self.canvas.create_image(200, 200, anchor=tk.NW, image=self.image)
@@ -289,6 +292,7 @@ class Display:
 
     def delete_point(self, event):
         if self.tk_marks:
+            self.raw_points.pop()
             oval = self.tk_marks.pop()
             self.canvas.delete(oval)
         else:
@@ -299,30 +303,34 @@ class Display:
         else:
             warnings.warn('last point!')
 
+    def delete_label(self, event):
+        for mark in self.tk_marks:
+            self.canvas.delete(mark)
+        self.tk_marks = []
+        self.raw_points = []
+
     def save_points(self, event):
         abs_image_path = self.image_paths[self.image_index]
         if abs_image_path in self.processed_geometry:
             pass
         else:
             self.processed_geometry[abs_image_path] = []
-        tag = self.tag.get()
+
         if self.geometry_mode == GeometryMode.NONE:
             warnings.warn('no mode selected')
             return
-        elif self.geometry_mode == GeometryMode.POINT:
-            warnings.warn('not implemented')
-            return
-        elif self.geometry_mode == GeometryMode.LINE:
-            point_processor = g.LineString
-        elif self.geometry_mode == GeometryMode.POLYGON:
-            point_processor = g.Polygon
-        else:
-            warnings.warn('not implemented')
-            return
+
+        point_processor = {
+            GeometryMode.POINT: g.MultiPoint,
+            GeometryMode.LINE: g.LineString,
+            GeometryMode.POLYGON: g.Polygon,
+            GeometryMode.FULL: lambda x: g.box(0, 0, self.image.width, self.image.height),
+            GeometryMode.CUSTOM: lambda x: warnings.warn('not implemented'),
+        }.get(self.geometry_mode, lambda x: warnings.warn('invalid geometry mode'))
 
         self.processed_geometry[abs_image_path].append(
             {
-                'tag': tag,
+                'tag': self.tag.get(),
                 "order": len(self.processed_geometry[abs_image_path]),
                 "wkt": point_processor(self.raw_points)
             }
@@ -330,8 +338,10 @@ class Display:
 
         for i in range(len(self.tk_marks)):
             self.canvas.delete(self.tk_marks.pop())
+        self.raw_points = []
 
-        print(self.processed_geometry)
+    # Save geometry
+    def save_geometry(self, event=None):
         save_as_json(self.processed_geometry)
 
 
