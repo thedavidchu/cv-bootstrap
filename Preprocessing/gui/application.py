@@ -1,6 +1,6 @@
 """
 TODO
-1. Clean up the code obviously.
+1. Clean up the code obviously. This is complete spaghetti, I know that. I need to create smaller classes :O
 2. Move stuff to other functions/ classes. Namely, images and labels.
 """
 
