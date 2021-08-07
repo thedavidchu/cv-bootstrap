@@ -7,6 +7,7 @@ TODO
 import tkinter as tk
 import tkinter.filedialog  # Necessary
 import json
+import time
 import warnings
 from PIL import Image, ImageTk
 from Preprocessing.server.path import get_paths, filter_image_paths, filter_label_paths
@@ -16,17 +17,6 @@ from shapely import geometry as g
 
 SASSY_WARNING = lambda: warnings.warn('lol this does not do anything!')
 _TESTING_MODE = True
-
-
-def save_as_json(to_save: dict):
-    # Convert wkt to well-known text
-    for abs_image_path, labels in to_save.items():
-        for label in labels:
-            if isinstance(label['wkt'], str):
-                continue
-            label['wkt'] = label['wkt'].wkt
-    with open('../../labels/labels.json', 'w') as f:
-        json.dump(to_save, f, indent=4)
 
 
 class Display:
@@ -283,11 +273,10 @@ class Display:
         x2, y2 = (event.x + 1), (event.y + 1)
 
         if self.raw_points:
-            line = self.canvas.create_line(event.x, event.y, self.raw_points[-1].x, self.raw_points[-1].y)
+            line = self.canvas.create_line(event.x, event.y, self.raw_points[-1].x, self.raw_points[-1].y, fill='green')
             self.tk_marks.append(line)
         oval = self.canvas.create_oval(x1, y1, x2, y2, fill=python_green)
         self.tk_marks.append(oval)
-
         self.raw_points.append(g.Point(event.x, event.y))
 
     def delete_point(self, event):
@@ -319,12 +308,11 @@ class Display:
         if self.geometry_mode == GeometryMode.NONE:
             warnings.warn('no mode selected')
             return
-
         point_processor = {
             GeometryMode.POINT: g.MultiPoint,
             GeometryMode.LINE: g.LineString,
             GeometryMode.POLYGON: g.Polygon,
-            GeometryMode.FULL: lambda x: g.box(0, 0, self.image.width, self.image.height),
+            GeometryMode.FULL: lambda x: g.box(0, 0, self.image.width(), self.image.height()),
             GeometryMode.CUSTOM: lambda x: warnings.warn('not implemented'),
         }.get(self.geometry_mode, lambda x: warnings.warn('invalid geometry mode'))
 
@@ -332,7 +320,8 @@ class Display:
             {
                 'tag': self.tag.get(),
                 "order": len(self.processed_geometry[abs_image_path]),
-                "wkt": point_processor(self.raw_points)
+                "wkt": point_processor(self.raw_points),
+                "timestamp": time.time()
             }
         )
 
@@ -342,7 +331,14 @@ class Display:
 
     # Save geometry
     def save_geometry(self, event=None):
-        save_as_json(self.processed_geometry)
+        # Convert wkt to well-known text
+        for abs_image_path, labels in self.processed_geometry.items():
+            for label in labels:
+                if isinstance(label['wkt'], str):
+                    continue
+                label['wkt'] = label['wkt'].wkt
+        with open('../../labels/labels.json', 'w') as f:
+            json.dump(self.processed_geometry, f, indent=4)
 
 
 if __name__ == '__main__':
