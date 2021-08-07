@@ -7,6 +7,7 @@ TODO
 
 import tkinter as tk
 import tkinter.filedialog  # Necessary
+import json
 import warnings
 from PIL import Image, ImageTk
 from Preprocessing.server.path import get_paths, filter_image_paths, filter_label_paths
@@ -17,6 +18,15 @@ from shapely import geometry as g
 SASSY_WARNING = lambda: warnings.warn('lol this does not do anything!')
 _TESTING_MODE = True
 
+def save_as_json(to_save: dict):
+    # Convert wkt to well-known text
+    for abs_image_path, labels in to_save.items():
+        for label in labels:
+            if isinstance(label['wkt'], str):
+                continue
+            label['wkt'] = label['wkt'].wkt
+    with open('../../labels/labels.json', 'w') as f:
+        json.dump(to_save, f, indent=4)
 
 class Display:
     def __init__(self, root):
@@ -36,6 +46,7 @@ class Display:
         self.bottom_frame.pack(anchor=tk.SW, side=tk.BOTTOM, fill=tk.X)
         self.top_frame.pack(anchor=tk.N, fill='both')
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
+        self.tag = None
         self.image_frame.pack(anchor=tk.NW)
 
         # Modes
@@ -54,7 +65,7 @@ class Display:
         self.panel = None
         self.raw_points = []
 
-
+        self.tk_marks = []
         self.processed_geometry = {}
 
     def __no_images(self):
@@ -159,7 +170,8 @@ class Display:
     def _tag_menubar(self):
         frame_label = self.tag_frame
         tk.Label(frame_label, text='Tags/Categories').grid(row=0)
-        tk.Entry(frame_label).grid(row=1)
+        self.tag = tk.Entry(frame_label)
+        self.tag.grid(row=1)
 
     def display_workspace(self):
         # Do on __init__?
@@ -247,7 +259,6 @@ class Display:
         """
         if self.__no_images():
             self.image = None
-            # self.panel = None
             warnings.warn('no images available to iterate through.')
         else:
             self.__next_image_index(offset)
@@ -255,25 +266,73 @@ class Display:
             ## TO DELETE
             self.canvas = tk.Canvas(master=self.top_frame, width=500, height=500)
             self.canvas.pack(side=tk.LEFT, anchor=tk.NW)
-            # self.canvas.create_image(10, 10, image=self.image, anchor=tk.NW)
-            self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
-            self.canvas.bind("<BackSpace>", )
+            self.canvas.bind("<B1-Motion>", self.draw_point_and_line)
+            self.root.bind("<BackSpace>", self.delete_point)
+            self.root.bind("<Return>", self.save_points)
             ## END TO DELETE
             self.image = ImageTk.PhotoImage(Image.open(image_path))
             self.canvas.create_image(200, 200, anchor=tk.NW, image=self.image)
 
-    def draw_on_canvas(self, event):
+    def draw_point_and_line(self, event):
         # From https://www.python-course.eu/tkinter_canvas.php
         python_green = "#476042"
         x1, y1 = (event.x - 1), (event.y - 1)
         x2, y2 = (event.x + 1), (event.y + 1)
 
         if self.raw_points:
-            self.canvas.create_line(event.x, event.y, self.raw_points[-1].x, self.raw_points[-1].y)
+            line = self.canvas.create_line(event.x, event.y, self.raw_points[-1].x, self.raw_points[-1].y)
+            self.tk_marks.append(line)
+        oval = self.canvas.create_oval(x1, y1, x2, y2, fill=python_green)
+        self.tk_marks.append(oval)
+
         self.raw_points.append(g.Point(event.x, event.y))
-        self.canvas.create_oval(x1, y1, x2, y2, fill=python_green)
 
+    def delete_point(self, event):
+        if self.tk_marks:
+            oval = self.tk_marks.pop()
+            self.canvas.delete(oval)
+        else:
+            warnings.warn('No more points!')
+        if self.tk_marks:
+            line = self.tk_marks.pop()
+            self.canvas.delete(line)
+        else:
+            warnings.warn('last point!')
 
+    def save_points(self, event):
+        abs_image_path = self.image_paths[self.image_index]
+        if abs_image_path in self.processed_geometry:
+            pass
+        else:
+            self.processed_geometry[abs_image_path] = []
+        tag = self.tag.get()
+        if self.geometry_mode == GeometryMode.NONE:
+            warnings.warn('no mode selected')
+            return
+        elif self.geometry_mode == GeometryMode.POINT:
+            warnings.warn('not implemented')
+            return
+        elif self.geometry_mode == GeometryMode.LINE:
+            point_processor = g.LineString
+        elif self.geometry_mode == GeometryMode.POLYGON:
+            point_processor = g.Polygon
+        else:
+            warnings.warn('not implemented')
+            return
+
+        self.processed_geometry[abs_image_path].append(
+            {
+                'tag': tag,
+                "order": len(self.processed_geometry[abs_image_path]),
+                "wkt": point_processor(self.raw_points)
+            }
+        )
+
+        for i in range(len(self.tk_marks)):
+            self.canvas.delete(self.tk_marks.pop())
+
+        print(self.processed_geometry)
+        save_as_json(self.processed_geometry)
 
 
 if __name__ == '__main__':
