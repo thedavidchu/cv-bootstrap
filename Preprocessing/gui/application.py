@@ -1,16 +1,24 @@
+"""
+TODO
+1. Clean up the code obviously.
+2. Move stuff to other functions/ classes. Namely, images and labels.
+"""
+
+
 import tkinter as tk
 import tkinter.filedialog  # Necessary
+import warnings
 from PIL import Image, ImageTk
 from Preprocessing.server.path import get_paths, filter_image_paths, filter_label_paths
 from Preprocessing.server.label import ImageLabels
 from Preprocessing.server.modes import CursorMode, GeometryMode
-import warnings
+from shapely import geometry as g
 
 SASSY_WARNING = lambda: warnings.warn('lol this does not do anything!')
+_TESTING_MODE = True
 
 
 class Display:
-
     def __init__(self, root):
         self.root = root
         self.root.title('Label Images')
@@ -44,7 +52,10 @@ class Display:
         self.image_label = ImageLabels
         self.image = None
         self.panel = None
-        self.points = []
+        self.raw_points = []
+
+
+        self.processed_geometry = {}
 
     def __no_images(self):
         """ The selected directory has no valid images. """
@@ -113,7 +124,7 @@ class Display:
                 value=i,
                 command=command,
                 indicatoron=0,
-            ).grid(row=row, column=i+1)
+            ).grid(row=row, column=i + 1)
 
     def _cursor_menubar(self):
         def _set_cursor_mode(cursor_mode: CursorMode):
@@ -158,10 +169,16 @@ class Display:
         # Bottom menubar
         self._cursor_menubar()
         self._geometry_menubar()
-        self._transform_menubar()   # Note implemented
+        self._transform_menubar()  # Note implemented
 
         # Right tag bar
         self._tag_menubar()
+
+        # TESTING MODE
+        if _TESTING_MODE:
+            self.image_paths = get_paths('../../images/', filter_image_paths)
+            self.image_index = -1
+            self.display_next_image()
 
     # ==================== OPENING DIR AND FILES ==================== #
     def _open_dir(self, filter_fnc):
@@ -236,10 +253,11 @@ class Display:
             self.__next_image_index(offset)
             image_path = self.image_paths[self.image_index]
             ## TO DELETE
-            self.canvas = tk.Canvas(width=500, height=500)
-            self.canvas.pack()
-            self.canvas.create_image(10, 10, image=self.image, anchor=tk.NW)
+            self.canvas = tk.Canvas(master=self.top_frame, width=500, height=500)
+            self.canvas.pack(side=tk.LEFT, anchor=tk.NW)
+            # self.canvas.create_image(10, 10, image=self.image, anchor=tk.NW)
             self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
+            self.canvas.bind("<BackSpace>", )
             ## END TO DELETE
             self.image = ImageTk.PhotoImage(Image.open(image_path))
             self.canvas.create_image(200, 200, anchor=tk.NW, image=self.image)
@@ -249,29 +267,17 @@ class Display:
         python_green = "#476042"
         x1, y1 = (event.x - 1), (event.y - 1)
         x2, y2 = (event.x + 1), (event.y + 1)
-        self.points.append((event.x, event.y))
-        print(self.points)
+
+        if self.raw_points:
+            self.canvas.create_line(event.x, event.y, self.raw_points[-1].x, self.raw_points[-1].y)
+        self.raw_points.append(g.Point(event.x, event.y))
         self.canvas.create_oval(x1, y1, x2, y2, fill=python_green)
 
 
 
+
 if __name__ == '__main__':
-    pass
     root = tk.Tk()
     display = Display(root)
     display.display_workspace()
     root.mainloop()
-
-    # from tkinter import *
-    # top = Tk()
-    # Lb1 = Listbox(top)
-    # Lb1.insert(1, "Python")
-    # Lb1.insert(2, "Perl")
-    # Lb1.insert(3, "C")
-    # Lb1.insert(4, "PHP")
-    # Lb1.insert(5, "JSP")
-    # Lb1.insert(6, "Ruby")
-    #
-    # Lb1.pack()
-    # top.mainloop()
-
