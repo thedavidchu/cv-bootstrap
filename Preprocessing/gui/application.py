@@ -14,6 +14,7 @@ class Display:
     def __init__(self, root):
         self.root = root
         self.root.title('Label Images')
+        self.canvas = None
 
         # Menu bar
         self.top_menubar = None
@@ -43,6 +44,7 @@ class Display:
         self.image_label = ImageLabels
         self.image = None
         self.panel = None
+        self.points = []
 
     def __no_images(self):
         """ The selected directory has no valid images. """
@@ -177,7 +179,8 @@ class Display:
                 raise ValueError('invalid filter function!')
         except NotADirectoryError:
             warnings.warn('invalid directory chosen')
-        except
+        except ValueError:
+            warnings.warn('invalid filter function!')
         # Show workspace window
         self.root.deiconify()
         # Reset image index
@@ -232,9 +235,24 @@ class Display:
         else:
             self.__next_image_index(offset)
             image_path = self.image_paths[self.image_index]
+            ## TO DELETE
+            self.canvas = tk.Canvas(width=500, height=500)
+            self.canvas.pack()
+            self.canvas.create_image(10, 10, image=self.image, anchor=tk.NW)
+            self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
+            ## END TO DELETE
             self.image = ImageTk.PhotoImage(Image.open(image_path))
-            panel = tk.Label(self.image_frame, image=self.image)
-            panel.grid(row=0, column=0)
+            self.canvas.create_image(200, 200, anchor=tk.NW, image=self.image)
+
+    def draw_on_canvas(self, event):
+        # From https://www.python-course.eu/tkinter_canvas.php
+        python_green = "#476042"
+        x1, y1 = (event.x - 1), (event.y - 1)
+        x2, y2 = (event.x + 1), (event.y + 1)
+        self.points.append((event.x, event.y))
+        print(self.points)
+        self.canvas.create_oval(x1, y1, x2, y2, fill=python_green)
+
 
 
 if __name__ == '__main__':
