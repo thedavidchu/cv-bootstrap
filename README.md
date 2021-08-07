@@ -3,6 +3,8 @@
 ## Purpose
 Bootstrap for a computer vision project.
 
+**Note: this will not work out of the box, because I do not provide the test images**
+
 ## Compatibility
 I am going to only work on .png and .jpeg files to start. I will add conversions as we progress.
 
