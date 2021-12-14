@@ -1,17 +1,21 @@
 import tkinter as tk
 
-from common import unimplemented_fnc
+from Labelling.graphics.common import unimplemented_fnc
 
 
-def config_top_menu_bar(root: tk.Tk):
-    top_menu_bar = tk.Menu(root)
-    root.config(menu=top_menu_bar)
+def config_geometry(app):
+    app.root.geometry("500x500")
+
+
+def config_top_menu_bar(app):
+    top_menu_bar = tk.Menu(app.root)
+    app.root.config(menu=top_menu_bar)
 
     # File menu
     file_menu = tk.Menu(top_menu_bar, tearoff=0)
     file_menu.add_command(label='New', command=unimplemented_fnc)
-    file_menu.add_command(label='Open image directory', command=unimplemented_fnc)
-    file_menu.add_command(label='Open image file', command=unimplemented_fnc)
+    file_menu.add_command(label='Open image directory', command=app.add_img_dir)
+    file_menu.add_command(label='Open image file', command=app.add_img_files)
     file_menu.add_command(label='Open label directory', command=unimplemented_fnc)
     file_menu.add_command(label='Open label file', command=unimplemented_fnc)
     file_menu.add_separator()
@@ -44,4 +48,6 @@ def config_top_menu_bar(root: tk.Tk):
     help_menu = tk.Menu(top_menu_bar, tearoff=0)
     help_menu.add_command(label='Help...', command=unimplemented_fnc)
     top_menu_bar.add_cascade(label='Help', menu=help_menu)
+
+
 

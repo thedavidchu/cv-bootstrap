@@ -1,6 +1,6 @@
 import os
 
-from Labelling.config.constants import TEST_IMG_PATH
+from Labelling.config.constants import TEST_IMG_FILE_PATH
 
 
 def standardize_path(path: str) -> str:
@@ -14,4 +14,4 @@ def standardize_path(path: str) -> str:
 
 
 if __name__ == '__main__':
-    print(standardize_path(TEST_IMG_PATH))
+    print(standardize_path(TEST_IMG_FILE_PATH))
