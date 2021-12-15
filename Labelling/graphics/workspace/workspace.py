@@ -12,7 +12,7 @@ class WorkSpace:
         self.workspace_frame.pack(anchor=tk.N, fill="both")
 
         self.image_frame = tk.LabelFrame(self.workspace_frame)
-        self.image_frame.pack(anchor=tk.NW, fill="both")
+        self.image_frame.pack(anchor=tk.NW)
 
         self.canvas_frame = None
         # Packing for above done later
@@ -60,12 +60,14 @@ class WorkSpace:
         # TODO save shape into IR
 
     def delete_last_point(self, event=None):
-        print("BackSpace")
-        if len(self.points):
+        # TODO(dchu) - flush out bugs in this
+        # Delete at least one mark (if present)
+        if self.tk_marks:
+            self.canvas_frame.delete(self.tk_marks.pop())
+        if self.points:
             self.points.pop()
-        if len(self.tk_marks):
-            point = self.tk_marks.pop()
-            self.tk_marks.pop()
+            if len(self.points) == len(self.tk_marks):
+                self.canvas_frame.delete(self.tk_marks.pop())
 
     def display_image(self, image: Image):
         width, height = image.size
@@ -75,7 +77,8 @@ class WorkSpace:
         self.canvas_frame.bind("<Button-1>", self.draw_point_and_line)
         self.canvas_frame.bind("<B1-Motion>", self.draw_point_and_line)
 
-        self.canvas_frame.bind("<Return>", self.connect_ends)
+        self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
+        self.canvas_frame.bind("<KeyPress-Return>", self.connect_ends)
         self.canvas_frame.bind("<BackSpace>", self.delete_last_point)
 
         # Attach image
