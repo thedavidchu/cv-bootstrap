@@ -33,6 +33,7 @@ class ImagePaths:
 
     def load_dir(self, top_dir_path: str):
         """ Load a directory of images. """
+        self._idx = 0
         top_dir_path = standardize_path(top_dir_path)
         # Walk dir_path and get all .jpg, .png, etc files
         for dir_path, dir_names, file_names in os.walk(top_dir_path):
@@ -47,10 +48,12 @@ class ImagePaths:
                     self._img_paths.append((top_dir_path, rel_dir_path, file_name))
 
     def load_files(self, file_paths: Tuple[str]):
+        self._idx = 0
         for file_path in file_paths:
             self.load_file(file_path)
 
     def load_file(self, file_path: str):
+        self._idx = 0
         file_path = standardize_path(file_path)
         _, file_ext = os.path.splitext(file_path)
         if file_ext.lower() in IMG_EXT:
