@@ -1,7 +1,13 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 
+import warnings
+
 import shapely.geometry as g
+
+from Labelling.common.circular_buffer import CircularBuffer
+from Labelling.graphics.common import unimplemented_fnc1
+from Labelling.graphics.workspace.label import DrawMode, Label
 
 
 class WorkSpace:
@@ -20,66 +26,97 @@ class WorkSpace:
         self.tag_frame = tk.LabelFrame(self.workspace_frame)
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
-        self.points = []    # List of points
-        self.tk_marks = []  # List of tk marks in order (for undo)
+        self.mode: DrawMode = DrawMode.LINE     # Store previous mode
+        self.labels = CircularBuffer(Label)
+        self.labels.add_item(Label())
+        self.labels.get().mode = self.mode  # Initialize mode (default to NONE in deployment)
+
+        self.buffer = []    # List of chars
         self.point_colour = "#476042"
         self.line_colour = "green"
         self.image = None
 
-    def draw_point_and_line(self, event):
-        x1, y1 = (event.x - 1), (event.y - 1)
-        x2, y2 = (event.x + 1), (event.y + 1)
+    def config_keyboard(self):
+        self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
 
-        # If previous point exists, add line
-        if self.points:
-            line = self.canvas_frame.create_line(
-                event.x,
-                event.y,
-                self.points[-1].x,
-                self.points[-1].y,
-                fill=self.line_colour
-            )
-            self.tk_marks.append(line)
+        # Control keys
+        self.canvas_frame.bind("<Return>", unimplemented_fnc1)
+        self.canvas_frame.bind("<BackSpace>", unimplemented_fnc1)
+        # self.canvas_frame.bind("<>", unimplemented_fnc1)
+        # self.canvas_frame.bind("<>", unimplemented_fnc1)
+        # self.canvas_frame.bind("<>", unimplemented_fnc1)
+        # self.canvas_frame.bind("<>", unimplemented_fnc1)
+        # self.canvas_frame.bind("<>", unimplemented_fnc1)
 
-        # Draw point
-        point = self.canvas_frame.create_oval(x1, y1, x2, y2, fill=self.point_colour)
-        self.tk_marks.append(point)
-        self.points.append(g.Point(event.x, event.y))
+        alpha = r"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        for char in alpha:
+            self.canvas_frame.bind(f"<{char}>", lambda x: print(self.buffer))
 
-    def connect_ends(self, event=None):
-        if len(self.points) >= 2:
-            first_point, last_point = self.points[0], self.points[-1]
-            line = self.canvas_frame.create_line(
-                first_point.x, first_point.y,
-                last_point.x, last_point.y,
-                fill=self.line_colour
-            )
-            self.tk_marks.append(line)
+    def draw(self, event):
+        x, y = event.x, event.y
+
+        current_label: Label = self.labels.get()
+        self.mode = current_label.mode
+        points = current_label.points
+        prev_x, prev_y = points[-1] if points else (None, None)
+        points.append((x, y))
+
+        mode = current_label.mode
+        if mode == DrawMode.NONE:
+            warnings.warn("no drawing mode selected")
+            return
+        elif mode == DrawMode.SQUARE:
+            raise NotImplementedError("squares are not yet supported")
+        if mode == DrawMode.POINT:
+            pass
+        elif mode == DrawMode.LINE or mode == DrawMode.POLYGON:
+            if len(points) >= 2:
+                line = self.canvas_frame.create_line(
+                    x,
+                    y,
+                    prev_x,
+                    prev_y,
+                    fill=self.line_colour
+                )
+                current_label.marks.append(line)
         else:
-            print("Blah")
-        # TODO save shape into IR
+            raise NotImplementedError("unsupported drawing mode")
+        point_mark = self.canvas_frame.create_oval(x - 1, y - 1, x + 1, y + 1, fill=self.point_colour)
+        current_label.marks.append(point_mark)
 
-    def delete_last_point(self, event=None):
-        # TODO(dchu) - flush out bugs in this
-        # Delete at least one mark (if present)
-        if self.tk_marks:
-            self.canvas_frame.delete(self.tk_marks.pop())
-        if self.points:
-            self.points.pop()
-            if len(self.points) == len(self.tk_marks):
-                self.canvas_frame.delete(self.tk_marks.pop())
+    def write(self, event=None):
+        """ Write current label to console. Switch to next label. """
+        current_label: Label = self.labels.get()
+        self.mode = current_label.mode  # Carry mode over to next
+
+        if current_label.mode == DrawMode.POLYGON and len(current_label.points) >= 2:
+            x, y = current_label.points[0]
+            self.draw(g.Point(x, y))
+        print(current_label.write())
+        self.labels.add_item(Label())
+        self.labels.next()
+        self.labels.get().mode = self.mode
+
+    def to_json(self, event=None):
+        r = {}
+        for i, label in enumerate(self.labels):
+            r[f"{i}"] = label.write()
+
+        print(r)
+        return r
 
     def display_image(self, image: Image):
         width, height = image.size
 
         self.canvas_frame = tk.Canvas(master=self.image_frame, width=width, height=height)
         self.canvas_frame.pack(side=tk.LEFT, anchor=tk.NW)
-        self.canvas_frame.bind("<Button-1>", self.draw_point_and_line)
-        self.canvas_frame.bind("<B1-Motion>", self.draw_point_and_line)
+        self.canvas_frame.bind("<Button-1>", self.draw)
+        self.canvas_frame.bind("<B1-Motion>", self.draw)
 
         self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
-        self.canvas_frame.bind("<KeyPress-Return>", self.connect_ends)
-        self.canvas_frame.bind("<BackSpace>", self.delete_last_point)
+        self.canvas_frame.bind("<Return>", self.write)
+        self.canvas_frame.bind("<Control-s>", self.to_json)
+        self.canvas_frame.bind("<Control-z>", unimplemented_fnc1)
 
         # Attach image
         self.image = ImageTk.PhotoImage(image)

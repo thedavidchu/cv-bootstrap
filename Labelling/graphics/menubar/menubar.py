@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from Labelling.graphics.common import unimplemented_fnc
+from Labelling.graphics.workspace.label import DrawMode
 
 
 def config_top_menu_bar(app):
@@ -39,6 +40,25 @@ def config_top_menu_bar(app):
     view_menu.add_command(label='B', command=unimplemented_fnc)
     view_menu.add_command(label='C', command=unimplemented_fnc)
     top_menu_bar.add_cascade(label='View', menu=view_menu)
+
+    # Option menu
+    def set_mode_to_none(): app.workspace.labels.get().mode = DrawMode.NONE
+
+    def set_mode_to_point(): app.workspace.labels.get().mode = DrawMode.POINT
+
+    def set_mode_to_line(): app.workspace.labels.get().mode = DrawMode.LINE
+
+    def set_mode_to_polygon(): app.workspace.labels.get().mode = DrawMode.POLYGON
+
+    def set_mode_to_square(): app.workspace.labels.get().mode = DrawMode.SQUARE
+
+    option_menu = tk.Menu(top_menu_bar, tearoff=0)
+    option_menu.add_command(label="Mode -> Select", command=set_mode_to_none)
+    option_menu.add_command(label="Mode -> Point", command=set_mode_to_point)
+    option_menu.add_command(label="Mode -> Line", command=set_mode_to_line)
+    option_menu.add_command(label="Mode -> Polygon", command=set_mode_to_polygon)
+    option_menu.add_command(label="Mode -> Square", command=set_mode_to_square)
+    top_menu_bar.add_cascade(label='Option', menu=option_menu)
 
     # Help menu
     help_menu = tk.Menu(top_menu_bar, tearoff=0)
