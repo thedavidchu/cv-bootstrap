@@ -4,7 +4,7 @@ from Labelling.graphics.common import build_warning
 from Labelling.graphics.workspace.label import DrawMode
 
 def config_tool_bar(app):
-    bottomtoolbar_frame = tk.LabelFrame(app.root, text="Blah")
+    bottomtoolbar_frame = tk.LabelFrame(app.root, text="Bottom Tool Bar")
     bottomtoolbar_frame.pack(anchor=tk.N, fill="both")
     misc = []
 
@@ -13,22 +13,12 @@ def config_tool_bar(app):
     misc.append(tmp)
 
     mode = tk.StringVar(bottomtoolbar_frame, "2")
-    def set_mode_to_none(): app.workspace.change_mode(DrawMode.NONE)
-
-    def set_mode_to_point(): app.workspace.change_mode(DrawMode.POINT)
-
-    def set_mode_to_line(): app.workspace.change_mode(DrawMode.LINE)
-
-    def set_mode_to_polygon(): app.workspace.change_mode(DrawMode.POLYGON)
-
-    def set_mode_to_square(): app.workspace.change_mode(DrawMode.SQUARE)
-
     modes = {
-        "Cursor": ("0", set_mode_to_none),
-        "Point": ("1", set_mode_to_point),
-        "Line": ("2", set_mode_to_line),
-        "Polygon": ("3", set_mode_to_polygon),
-        "Square": ("4", set_mode_to_square)
+        "Cursor": ("0", lambda: app.workspace.change_mode(DrawMode.NONE)),
+        "Point": ("1", lambda: app.workspace.change_mode(DrawMode.POINT)),
+        "Line": ("2", lambda: app.workspace.change_mode(DrawMode.LINE)),
+        "Polygon": ("3", lambda: app.workspace.change_mode(DrawMode.POLYGON)),
+        "Square": ("4", lambda: app.workspace.change_mode(DrawMode.SQUARE))
     }
     for i, (text, (value, cmd)) in enumerate(modes.items()):
         tk.Radiobutton(

@@ -41,25 +41,6 @@ def config_top_menu_bar(app):
     view_menu.add_command(label='C', command=build_warning("View::C"))
     top_menu_bar.add_cascade(label='View', menu=view_menu)
 
-    # Option menu
-    def set_mode_to_none(): app.workspace.change_mode(DrawMode.NONE)
-
-    def set_mode_to_point(): app.workspace.change_mode(DrawMode.POINT)
-
-    def set_mode_to_line(): app.workspace.change_mode(DrawMode.LINE)
-
-    def set_mode_to_polygon(): app.workspace.change_mode(DrawMode.POLYGON)
-
-    def set_mode_to_square(): app.workspace.change_mode(DrawMode.SQUARE)
-
-    option_menu = tk.Menu(top_menu_bar, tearoff=0)
-    option_menu.add_command(label="Mode -> Select", command=set_mode_to_none)
-    option_menu.add_command(label="Mode -> Point", command=set_mode_to_point)
-    option_menu.add_command(label="Mode -> Line", command=set_mode_to_line)
-    option_menu.add_command(label="Mode -> Polygon", command=set_mode_to_polygon)
-    option_menu.add_command(label="Mode -> Square", command=set_mode_to_square)
-    top_menu_bar.add_cascade(label='Option', menu=option_menu)
-
     # Help menu
     help_menu = tk.Menu(top_menu_bar, tearoff=0)
     help_menu.add_command(label='Help...', command=unimplemented_fnc)
