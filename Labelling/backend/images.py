@@ -12,6 +12,7 @@ def get_image(img_path: str):
 
 
 class ImagePaths:
+    """ An over-engineered, glorified list of image paths that loads paths lazily."""
     def __init__(self):
         self._img_paths: List[Tuple[str, str, str]] = []
         self._idx = 0
@@ -21,6 +22,14 @@ class ImagePaths:
 
     def __getitem__(self, item):
         return get_image(os.path.join(*self._img_paths[item]))
+
+    def get_label_path(self) -> str:
+        """Return the current label path of the current label."""
+        full_path = os.path.join(*self._img_paths[self._idx])
+        pre, ext = os.path.splitext(full_path)
+        r = pre + ".json"
+        print(r)
+        return r
 
     def __next__(self):
         assert len(self._img_paths)

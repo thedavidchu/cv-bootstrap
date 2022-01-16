@@ -3,7 +3,7 @@ from typing import List
 
 class CircularBuffer:
     def __init__(self, dtype: type):
-        self.dtype: type = dtype
+        self._dtype: type = dtype
         self.items: List[dtype] = []
         self.idx: int = 0
 
@@ -25,6 +25,12 @@ class CircularBuffer:
         if self.items:
             return self.items[self.idx]
         raise IndexError("items is empty")
+
+    def insert_after_current(self, value):
+        """ Insert a value after the current index. Note that this is an O(N) operation. """
+        if not isinstance(value, self._dtype):
+            raise TypeError(f"Expected type {self._dtype}")
+        self.items.insert(self.idx + 1, value)
 
     def next(self):
         """ Step forward and return that item. """

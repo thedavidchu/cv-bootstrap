@@ -4,6 +4,7 @@ from Labelling.config.constants import TEST_IMG_DIR_PATH, TEST_LABEL_DIR_PATH
 
 from Labelling.backend.images import ImagePaths
 
+from Labelling.graphics.bottomtoolbar.bottomtoolbar import BottomToolBar
 from Labelling.graphics.menubar.menubar import MenuBar
 from Labelling.graphics.toolbar.toolbar import ToolBar
 from Labelling.graphics.workspace.workspace import WorkSpace
@@ -20,9 +21,10 @@ class App:
         self.menu_bar = MenuBar(self)
         self.tool_bar = ToolBar(self)
         self.workspace = WorkSpace(self)
+        self.bottom_tool_bar = BottomToolBar(self)
 
         # Backend
-        self.image_paths = ImagePaths()
+        self.image_paths: ImagePaths = ImagePaths()
 
     def add_img_dir(self):
         self.image_paths.load_dir(tk_open_dir())
