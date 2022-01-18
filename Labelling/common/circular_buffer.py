@@ -32,6 +32,13 @@ class CircularBuffer:
             raise TypeError(f"Expected type {self._dtype}")
         self.items.insert(self.idx + 1, value)
 
+    def delete_current(self):
+        """ Delete the current item and keep the index the same (effectively moving to the next)"""
+        if self.items:
+            self.items.pop(self.idx)
+            num = len(self.items)
+            self.idx = self.idx % num if num else 0
+
     def next(self):
         """ Step forward and return that item. """
         if self.items:

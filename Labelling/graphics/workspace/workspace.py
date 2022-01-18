@@ -1,6 +1,7 @@
 import os.path
 import tkinter as tk
 import json
+import time
 from PIL import Image, ImageTk
 
 import warnings
@@ -8,7 +9,6 @@ import warnings
 import shapely.geometry as g
 
 from Labelling.common.circular_buffer import CircularBuffer
-from Labelling.config.constants import TEST_LABEL_DIR_PATH
 from Labelling.graphics.common import unimplemented_fnc1
 from Labelling.graphics.workspace.label import DrawMode, Label
 
@@ -42,10 +42,26 @@ class WorkSpace:
         self.labels.get().mode = self.mode  # Initialize mode (default to NONE in deployment)
 
         self.buffer = []    # List of chars
-        self.point_colour = "green"
-        self.background_line_colour = "green"
-        self.focus_line_colour = "red"
+        self.background_colour = "#00ff00"
+        self.focus_colour = "#ff0000"
         self.image = None
+
+    def reset_workspace(self):
+        self.labels: CircularBuffer[Label] = CircularBuffer(Label)
+        self.labels.add_item(Label())
+        self.labels.get().mode = self.mode  # Initialize mode (default to NONE in deployment)
+
+        # Destroy all sub-widgets
+        for widget in self.workspace_frame.winfo_children():
+            widget.destroy()
+
+        self.image_frame = tk.LabelFrame(self.workspace_frame)
+        self.image_frame.pack(anchor=tk.NW)
+
+        self.canvas_frame = None
+
+        self.tag_frame = tk.LabelFrame(self.workspace_frame)
+        self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
     def config_keyboard(self):
         self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
@@ -67,14 +83,13 @@ class WorkSpace:
         self.mode = new_mode
         self.labels.get().change_mode(new_mode)
         if new_mode != DrawMode.NONE:
-            print("Replacing marks")
-            self.replace_marks(self.focus_line_colour)    # Redraw line in "focus" colour
+            self.replace_marks(self.focus_colour)    # Redraw line in "focus" colour
 
     # ==================== MARKS AND POINTS ==================== #
     def draw(self, event=None, line_colour=None):
         """Draw points on the screen and write points to labels."""
         x, y = event.x, event.y
-        line_colour = self.focus_line_colour if line_colour is None else line_colour
+        line_colour = self.focus_colour if line_colour is None else line_colour
 
         current_label: Label = self.labels.get()
         self.mode = current_label.mode  # Set mode to current label's mode
@@ -105,7 +120,9 @@ class WorkSpace:
         else:
             raise NotImplementedError("unsupported drawing mode")
         r = max(1, width // 2)
-        point_mark = self.canvas_frame.create_oval(x - r, y - r, x + r, y + r, fill=self.point_colour)
+        point_mark = self.canvas_frame.create_oval(
+            x - r, y - r, x + r, y + r, fill=line_colour,
+            outline="")
         current_label.marks.append(point_mark)
 
     def erase(self, event=None):
@@ -127,9 +144,16 @@ class WorkSpace:
             self.canvas_frame.delete(current_label.marks.pop(-1))
             current_label.points.pop(-1)
 
-    def replace_marks(self, line_colour=None, blah=None):
+    def erase_current_label(self, event=None):
+        """ Erase the entirety of the current label.
+        NOTE - this can't currently be undone, which is very scary!"""
+        num = len(self.labels.get().points)
+        for _ in range(num):
+            self.erase()
+
+    def replace_marks(self, line_colour=None):
         """ Replace an on-screen annotation with a different colour in the same mode. """
-        line_colour = self.background_line_colour if line_colour is None else line_colour
+        line_colour = self.background_colour if line_colour is None else line_colour
         current_label: Label = self.labels.get()
 
         marks = current_label.marks
@@ -153,22 +177,27 @@ class WorkSpace:
         if current_label.mode == DrawMode.POLYGON and len(current_label.points) >= 2:
             x, y = current_label.points[0]
             self.draw(g.Point(x, y))
-        print(current_label)
 
     def goto_next_label(self, event=None):
         """ Advance to the next label without saving to file. """
-        self.write_to_label()
-        self.replace_marks(self.background_line_colour)    # Redraw line in "background" colour
-        self.labels.next()
-        self.replace_marks(self.focus_line_colour)  # Redraw line in "focus" colour
+        if not self.labels.get():
+            self.labels.delete_current()    # Goto next is implicit
+        else:
+            self.write_to_label()
+            self.replace_marks(self.background_colour)    # Redraw line in "background" colour
+            self.labels.next()
+        self.replace_marks(self.focus_colour)       # Redraw line in "focus" colour
         self.change_mode(self.labels.get().mode)    # Also redraws line (redundantly)
 
     def goto_prev_label(self, event=None):
         """ Go to the previous label without saving to file. """
-        self.write_to_label()
-        self.replace_marks(self.background_line_colour)    # Redraw line in "background" colour
+        if not self.labels.get():
+            self.labels.delete_current()    # Goto prev not implicit
+        else:
+            self.write_to_label()
+            self.replace_marks(self.background_colour)    # Redraw line in "background" colour
         self.labels.prev()
-        self.replace_marks(self.focus_line_colour)  # Redraw line in "focus" colour
+        self.replace_marks(self.focus_colour)  # Redraw line in "focus" colour
         self.change_mode(self.labels.get().mode)  # Also redraws line (redundantly)
 
     def goto_new_label(self, event=None):
@@ -176,13 +205,13 @@ class WorkSpace:
         if self.labels.get().points:
             draw_mode = self.labels.get().mode
             self.write_to_label()
-            self.replace_marks(self.background_line_colour)  # Redraw line in "background" colour
+            self.replace_marks(self.background_colour)  # Redraw line in "background" colour
             # Create new label and switch to it
             self.labels.insert_after_current(Label())
             self.labels.next()
             # Set draw mode the same as previously
             self.labels.get().mode = draw_mode
-            self.replace_marks(self.focus_line_colour)  # Redraw line in "focus" colour
+            self.replace_marks(self.focus_colour)  # Redraw line in "focus" colour
             self.change_mode(self.labels.get().mode)  # Also redraws line (redundantly)
         else:
             # Empty label, so don't write
@@ -192,7 +221,13 @@ class WorkSpace:
     def save(self, event=None):
         """ Save all labels. """
         self.write_to_label()
-        r = {repr(i): label.write() for i, label in enumerate(self.labels)}
+
+        r = {
+            "path": self.app.image_paths.get_image_path(),
+            "categories": ["TODO - the categories of objects (in numerical order)"],
+            "labels": [label.write() for label in self.labels if label],
+            "timestamp": time.time()
+        }
         label_path: str = self.app.image_paths.get_label_path()
         with open(label_path, "w") as f:
             json.dump(obj=r, fp=f, indent=4)
@@ -207,11 +242,14 @@ class WorkSpace:
         self.canvas_frame.bind("<B1-Motion>", self.draw)
 
         self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
-        self.canvas_frame.bind("<Tab>", self.goto_next_label)
-        self.canvas_frame.bind("<Shift-Tab>", self.goto_prev_label)
+        self.canvas_frame.bind("<Right>", self.goto_next_label)
+        self.canvas_frame.bind("<Left>", self.goto_prev_label)
+        self.canvas_frame.bind("<Delete>", self.erase_current_label)
         self.canvas_frame.bind("<Return>", self.goto_new_label)
         self.canvas_frame.bind("<Control-s>", self.save)
-        self.canvas_frame.bind("<Control-z>", self.erase)
+        self.canvas_frame.bind("<BackSpace>", self.erase)
+        self.canvas_frame.bind("<greater>", self.app.next_image)
+        self.canvas_frame.bind("<less>", self.app.prev_image)
 
         # Attach image
         self.image = ImageTk.PhotoImage(image)

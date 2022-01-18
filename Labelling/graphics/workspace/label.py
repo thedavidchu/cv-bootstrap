@@ -1,7 +1,6 @@
 from enum import Enum, auto
 from typing import List, Tuple, Dict, Union
 import warnings
-import json
 
 from shapely.geometry import MultiPoint, LineString, Polygon
 
@@ -22,6 +21,12 @@ class Label:
         self.marks: List = []   # List of tk marks (not saved)
         self.mode: DrawMode = DrawMode.NONE     # This is the drawing mode
 
+        self.colour: Union[str, None] = None
+        self.width: int = 0
+
+    def __bool__(self):
+        return self.points != []
+
     def __repr__(self):
         return f"{self.label}: {self.points}"
 
@@ -37,6 +42,7 @@ class Label:
         self.mode = mode
 
     def write(self) -> Dict[str, str]:
+        r = None
         if self.mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
         elif self.mode == DrawMode.POINT:
@@ -52,4 +58,9 @@ class Label:
         else:
             raise NotImplementedError("unsupported drawing mode")
 
-        return {f"{self.label}": repr(r)}
+        return {
+            "category": self.label,
+            "geometry": repr(r),
+            "colour": self.colour,
+            "width": self.width,
+        }

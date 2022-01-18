@@ -34,9 +34,19 @@ class App:
         self.image_paths.load_files(tk_open_files())
         self.workspace.display_image(next(self.image_paths))
 
+    def next_image(self, event=None):
+        self.workspace.save()   # Automatically save workspace -- may be unintuitive
+        self.workspace.reset_workspace()
+        self.workspace.display_image(app.image_paths.next_image())
+
+    def prev_image(self, event=None):
+        self.workspace.save()   # Automatically save workspace -- may be unintuitive
+        self.workspace.reset_workspace()
+        self.workspace.display_image(app.image_paths.prev_image())
+
 
 if __name__ == '__main__':
     app = App()
     app.image_paths.load_dir(TEST_IMG_DIR_PATH)
-    app.workspace.display_image(next(app.image_paths))
+    app.workspace.display_image(app.image_paths.get_image())
     app.root.mainloop()

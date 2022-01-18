@@ -23,19 +23,29 @@ class ImagePaths:
     def __getitem__(self, item):
         return get_image(os.path.join(*self._img_paths[item]))
 
+    def get_image_path(self):
+        return os.path.join(*self._img_paths[self._idx])
+
     def get_label_path(self) -> str:
         """Return the current label path of the current label."""
-        full_path = os.path.join(*self._img_paths[self._idx])
+        full_path = self.get_image_path()
         pre, ext = os.path.splitext(full_path)
         r = pre + ".json"
-        print(r)
         return r
 
-    def __next__(self):
+    def get_image(self):
         assert len(self._img_paths)
-        img = get_image(os.path.join(*self._img_paths[self._idx]))
+        return get_image(self.get_image_path())
+
+    def next_image(self):
+        assert len(self._img_paths)
         self._idx = (self._idx + 1) % len(self._img_paths)
-        return img
+        return get_image(self.get_image_path())
+
+    def prev_image(self):
+        assert len(self._img_paths)
+        self._idx = (self._idx - 1) % len(self._img_paths)
+        return get_image(self.get_image_path())
 
     def __repr__(self):
         return repr(tuple(map(lambda x: os.path.join(*x), self._img_paths)))
