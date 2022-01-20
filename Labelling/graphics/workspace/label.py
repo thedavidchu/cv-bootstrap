@@ -2,15 +2,16 @@ from enum import Enum, auto
 from typing import List, Tuple, Dict, Union
 import warnings
 
-from shapely.geometry import MultiPoint, LineString, Polygon
+from shapely.geometry import MultiPoint, LineString, Polygon, mapping
+from shapely import wkt
 
 
-class DrawMode(Enum):
-    NONE = auto()
-    POINT = auto()  # Multiple points
-    LINE = auto()   # A single, continuous line
-    POLYGON = auto()    # A single, closed polygon
-    SQUARE = auto()     # A square
+class DrawMode(str, Enum):
+    NONE = "NONE"
+    POINT = "POINT"  # Multiple points
+    LINE = "LINE"   # A single, continuous line
+    POLYGON = "POLYGON"    # A single, closed polygon
+    SQUARE = "SQUARE"     # A square
 
 
 class Label:
@@ -41,26 +42,62 @@ class Label:
     def change_mode(self, mode: DrawMode):
         self.mode = mode
 
-    def write(self) -> Dict[str, str]:
+    def dumps(self) -> Dict[str, str]:
         r = None
         if self.mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
         elif self.mode == DrawMode.POINT:
-            r = MultiPoint(self.points).wkt
+            r = self.points
         elif self.mode == DrawMode.LINE:
-            r = LineString(self.points).wkt
+            r = self.points
         elif self.mode == DrawMode.POLYGON:
-            r = Polygon(self.points).wkt
+            r = self.points
         elif self.mode == DrawMode.SQUARE:
             assert len(self.points) == 2
             (x0, y0), (x1, y1) = self.points
-            r = Polygon(((x0, y0), (x0, y1), (x1, y1), (x1, y0))).wkt
+            r = [(x0, y0), (x0, y1), (x1, y1), (x1, y0)]
         else:
             raise NotImplementedError("unsupported drawing mode")
 
         return {
             "category": self.label,
-            "geometry": repr(r),
+            "geometry": r,
+            "mode": self.mode,
             "colour": self.colour,
             "width": self.width,
         }
+
+    def loads(self, r: dict) -> bool:
+        """Load values from a string."""
+        result = True
+        print(r)
+        self.label = r.get("category", None)
+        if not isinstance(self.label, (str, type(None))):
+            self.label = None
+            result = False
+            assert False
+
+        self.points = r.get("geometry", [])
+        if not isinstance(self.points, list)\
+                and all(map(lambda point: isinstance(point, list), self.points))\
+                and all(map(lambda point: all(map(lambda x: isinstance(x, int), point))), self.points):
+            self.points = []
+            result = False
+            assert False
+        self.points = [tuple(point) for point in self.points]
+
+        try:
+            self.mode = DrawMode[r.get("mode", "NONE")]
+        except KeyError:
+            self.mode = DrawMode.NONE
+            result = False
+            assert False
+
+        self.colour = r.get("colour", "#00ff00")
+
+        self.width = r.get("width", 1)
+        # Error handle width
+        return result
+
+
+

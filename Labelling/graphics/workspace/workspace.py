@@ -46,9 +46,16 @@ class WorkSpace:
         self.focus_colour = "#ff0000"
         self.image = None
 
+    def print(self):
+        print(f"Mode: {self.mode}")
+        print(f"Labels: {self.labels}")
+        print(f"Background Colour: {self.background_colour}")
+        print(f"Focus Colour: {self.focus_colour}")
+
     def reset_workspace(self):
         self.labels: CircularBuffer[Label] = CircularBuffer(Label)
         self.labels.add_item(Label())
+
         self.labels.get().mode = self.mode  # Initialize mode (default to NONE in deployment)
 
         # Destroy all sub-widgets
@@ -63,21 +70,30 @@ class WorkSpace:
         self.tag_frame = tk.LabelFrame(self.workspace_frame)
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
-    def config_keyboard(self):
-        self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
+    def load_labels(self):
+        label_path: str = self.app.image_paths.get_label_path()
+        try:
+            with open(label_path) as f:
+                r = json.load(f)
+        except FileNotFoundError:
+            warnings.warn("File not found")
+            return False
 
-        # Control keys
-        self.canvas_frame.bind("<Return>", unimplemented_fnc1)
-        self.canvas_frame.bind("<BackSpace>", unimplemented_fnc1)
-        # self.canvas_frame.bind("<>", unimplemented_fnc1)
-        # self.canvas_frame.bind("<>", unimplemented_fnc1)
-        # self.canvas_frame.bind("<>", unimplemented_fnc1)
-        # self.canvas_frame.bind("<>", unimplemented_fnc1)
-        # self.canvas_frame.bind("<>", unimplemented_fnc1)
+        if "labels" not in r:
+            return False
+        labels = r["labels"]
+        if not isinstance(labels, list):
+            return False
+        for raw_label in labels:
+            self.goto_new_label()
+            label: Label = self.labels.get()
+            assert label.loads(raw_label)
+            self.mode = label.mode  # Cannot be NONE
+            self.background_colour = label.colour if label.colour else self.background_colour
+            self.app.bottom_tool_bar.line_width.set(label.width)    # Set width
+            self.replace_marks()
 
-        alpha = r"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-        for char in alpha:
-            self.canvas_frame.bind(f"<{char}>", lambda x: print(self.buffer))
+        self.goto_next_label()
 
     def change_mode(self, new_mode: DrawMode):
         self.mode = new_mode
@@ -154,6 +170,7 @@ class WorkSpace:
     def replace_marks(self, line_colour=None):
         """ Replace an on-screen annotation with a different colour in the same mode. """
         line_colour = self.background_colour if line_colour is None else line_colour
+        print("Blah", len(self.labels), self.labels, type(self.labels))
         current_label: Label = self.labels.get()
 
         marks = current_label.marks
@@ -180,7 +197,9 @@ class WorkSpace:
 
     def goto_next_label(self, event=None):
         """ Advance to the next label without saving to file. """
-        if not self.labels.get():
+        if len(self.labels) == 1:   # Prevent deleting only one
+            return
+        elif not self.labels.get():
             self.labels.delete_current()    # Goto next is implicit
         else:
             self.write_to_label()
@@ -191,7 +210,9 @@ class WorkSpace:
 
     def goto_prev_label(self, event=None):
         """ Go to the previous label without saving to file. """
-        if not self.labels.get():
+        if len(self.labels) == 1:   # Prevent deleting only one
+            return
+        elif not self.labels.get():
             self.labels.delete_current()    # Goto prev not implicit
         else:
             self.write_to_label()
@@ -225,7 +246,7 @@ class WorkSpace:
         r = {
             "path": self.app.image_paths.get_image_path(),
             "categories": ["TODO - the categories of objects (in numerical order)"],
-            "labels": [label.write() for label in self.labels if label],
+            "labels": [label.dumps() for label in self.labels if label],
             "timestamp": time.time()
         }
         label_path: str = self.app.image_paths.get_label_path()
@@ -254,3 +275,6 @@ class WorkSpace:
         # Attach image
         self.image = ImageTk.PhotoImage(image)
         self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
+
+        # Load if applicable
+        self.load_labels()

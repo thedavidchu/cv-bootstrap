@@ -37,12 +37,14 @@ class App:
     def next_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
+        self.workspace.print()
         self.workspace.display_image(app.image_paths.next_image())
 
     def prev_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(app.image_paths.prev_image())
+        self.workspace.print()
 
 
 if __name__ == '__main__':
