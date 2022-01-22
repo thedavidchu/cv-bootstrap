@@ -44,6 +44,7 @@ class WorkSpace:
         self.background_colour = "#00ff00"
         self.focus_colour = "#ff0000"
         self.image = None
+        self.image_size = None # Height, width
 
     def print(self):
         print(f"Mode: {self.mode}")
@@ -253,6 +254,7 @@ class WorkSpace:
             "categories": ["TODO - the categories of objects (in numerical order)"],
             "category_colours": ["TODO - map categories -> (focus, background colours)"],
             "labels": [label.dumps() for label in self.labels if label],
+            "image_size": self.image_size,
             "author": AUTHOR,
             "timestamp": time.time(),
         }
@@ -262,6 +264,7 @@ class WorkSpace:
 
     def display_image(self, image: Image):
         width, height = image.size
+        self.image_size = [height, width]
 
         self.canvas_frame = tk.Canvas(master=self.image_frame, width=width, height=height)
         self.canvas_frame.pack(side=tk.LEFT, anchor=tk.NW)
