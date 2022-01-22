@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from Labelling.config.constants import TEST_IMG_DIR_PATH, TEST_LABEL_DIR_PATH
+from Labelling.config.constants import TEST_IMG_DIR_PATH
 
 from Labelling.backend.images import ImagePaths
 
