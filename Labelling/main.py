@@ -50,5 +50,6 @@ class App:
 if __name__ == '__main__':
     app = App()
     app.image_paths.load_dir(TEST_IMG_DIR_PATH)
+    app.bottom_tool_bar.line_width.set(10)
     app.workspace.display_image(app.image_paths.get_image())
     app.root.mainloop()

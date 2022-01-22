@@ -38,7 +38,7 @@ def config_tool_bar(app):
 
     line_thickness = tk.Scale(
         bottomtoolbar_frame, from_=0, to=20, orient=tk.HORIZONTAL,
-        command=lambda x: app.workspace.replace_marks(app.workspace.focus_colour)
+        command=lambda x: app.workspace.replace_marks(line_colour=app.workspace.focus_colour)
     )
     line_thickness.grid(row=2, column=1)
 

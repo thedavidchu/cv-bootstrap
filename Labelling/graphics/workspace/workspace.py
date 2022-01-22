@@ -9,9 +9,8 @@ import warnings
 import shapely.geometry as g
 
 from Labelling.common.circular_buffer import CircularBuffer
-from Labelling.graphics.common import unimplemented_fnc1
 from Labelling.graphics.workspace.label import DrawMode, Label
-
+from Labelling.config.constants import AUTHOR
 
 class WorkSpace:
     """
@@ -91,7 +90,8 @@ class WorkSpace:
             self.mode = label.mode  # Cannot be NONE
             self.background_colour = label.colour if label.colour else self.background_colour
             self.app.bottom_tool_bar.line_width.set(label.width)    # Set width
-            self.replace_marks()
+            line_width = label.width
+            self.replace_marks(line_width=line_width)
 
         self.goto_next_label()
 
@@ -99,22 +99,23 @@ class WorkSpace:
         self.mode = new_mode
         self.labels.get().change_mode(new_mode)
         if new_mode != DrawMode.NONE:
-            self.replace_marks(self.focus_colour)    # Redraw line in "focus" colour
+            self.replace_marks(line_colour=self.focus_colour)    # Redraw line in "focus" colour
 
     # ==================== MARKS AND POINTS ==================== #
-    def draw(self, event=None, line_colour=None):
+    def draw(self, event=None, *, line_colour=None, line_width=None):
         """Draw points on the screen and write points to labels."""
         x, y = event.x, event.y
         line_colour = self.focus_colour if line_colour is None else line_colour
+        line_width = self.app.bottom_tool_bar.line_width.get() if line_width is None else line_width
 
         current_label: Label = self.labels.get()
+        current_label.width = line_width
         self.mode = current_label.mode  # Set mode to current label's mode
         points = current_label.points
         prev_x, prev_y = points[-1] if points else (None, None)
         points.append((x, y))   # Add point to label's list of points (spooky action at a distance)
-
+        print(f"{line_width=}")
         mode = current_label.mode   # TODO - Better in match-case statement
-        width = self.app.bottom_tool_bar.line_width.get()
         if mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
             return
@@ -130,12 +131,12 @@ class WorkSpace:
                     prev_x,
                     prev_y,
                     fill=line_colour,
-                    width=width,
+                    width=line_width,
                 )
                 current_label.marks.append(line)
         else:
             raise NotImplementedError("unsupported drawing mode")
-        r = max(1, width // 2)
+        r = max(1, line_width // 2)
         point_mark = self.canvas_frame.create_oval(
             x - r, y - r, x + r, y + r, fill=line_colour,
             outline="")
@@ -167,10 +168,11 @@ class WorkSpace:
         for _ in range(num):
             self.erase()
 
-    def replace_marks(self, line_colour=None):
+    def replace_marks(self, *, line_colour=None, line_width=None):
         """ Replace an on-screen annotation with a different colour in the same mode. """
         line_colour = self.background_colour if line_colour is None else line_colour
-        print("Blah", len(self.labels), self.labels, type(self.labels))
+        line_width = self.app.bottom_tool_bar.line_width.get() if line_width is None else line_width
+
         current_label: Label = self.labels.get()
 
         marks = current_label.marks
@@ -183,7 +185,7 @@ class WorkSpace:
             self.canvas_frame.delete(mark)
         # Redraw points
         for point in points:
-            self.draw(g.Point(*point), line_colour=line_colour)
+            self.draw(g.Point(*point), line_colour=line_colour, line_width=line_width)
 
     # ==================== WHICH LABELS ==================== #
     # Just completes polygons, doesn't actually do any writing
@@ -203,9 +205,9 @@ class WorkSpace:
             self.labels.delete_current()    # Goto next is implicit
         else:
             self.write_to_label()
-            self.replace_marks(self.background_colour)    # Redraw line in "background" colour
+            self.replace_marks(line_colour=self.background_colour)    # Redraw line in "background" colour
             self.labels.next()
-        self.replace_marks(self.focus_colour)       # Redraw line in "focus" colour
+        self.replace_marks(line_colour=self.focus_colour)       # Redraw line in "focus" colour
         self.change_mode(self.labels.get().mode)    # Also redraws line (redundantly)
 
     def goto_prev_label(self, event=None):
@@ -216,9 +218,9 @@ class WorkSpace:
             self.labels.delete_current()    # Goto prev not implicit
         else:
             self.write_to_label()
-            self.replace_marks(self.background_colour)    # Redraw line in "background" colour
+            self.replace_marks(line_colour=self.background_colour)    # Redraw line in "background" colour
         self.labels.prev()
-        self.replace_marks(self.focus_colour)  # Redraw line in "focus" colour
+        self.replace_marks(line_colour=self.focus_colour)  # Redraw line in "focus" colour
         self.change_mode(self.labels.get().mode)  # Also redraws line (redundantly)
 
     def goto_new_label(self, event=None):
@@ -226,13 +228,13 @@ class WorkSpace:
         if self.labels.get().points:
             draw_mode = self.labels.get().mode
             self.write_to_label()
-            self.replace_marks(self.background_colour)  # Redraw line in "background" colour
+            self.replace_marks(line_colour=self.background_colour)  # Redraw line in "background" colour
             # Create new label and switch to it
             self.labels.insert_after_current(Label())
             self.labels.next()
             # Set draw mode the same as previously
             self.labels.get().mode = draw_mode
-            self.replace_marks(self.focus_colour)  # Redraw line in "focus" colour
+            self.replace_marks(line_colour=self.focus_colour)  # Redraw line in "focus" colour
             self.change_mode(self.labels.get().mode)  # Also redraws line (redundantly)
         else:
             # Empty label, so don't write
@@ -243,11 +245,16 @@ class WorkSpace:
         """ Save all labels. """
         self.write_to_label()
 
+        if not AUTHOR:
+            raise ValueError("author constant must be specified")
+
         r = {
             "path": self.app.image_paths.get_image_path(),
             "categories": ["TODO - the categories of objects (in numerical order)"],
+            "category_colours": ["TODO - map categories -> (focus, background colours)"],
             "labels": [label.dumps() for label in self.labels if label],
-            "timestamp": time.time()
+            "author": AUTHOR,
+            "timestamp": time.time(),
         }
         label_path: str = self.app.image_paths.get_label_path()
         with open(label_path, "w") as f:
