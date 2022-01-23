@@ -1,5 +1,8 @@
 /images/
+/data/
 /labels/
 venv/
 .idea/
+Labelling/config/constants.py
+
 **/__pycache__/*
