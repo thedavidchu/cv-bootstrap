@@ -35,7 +35,7 @@ class WorkSpace:
         self.tag_frame = tk.LabelFrame(self.workspace_frame)
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
-        self.mode: DrawMode = DrawMode.LINE     # Store previous mode
+        self.mode: DrawMode = DrawMode.POLYGON     # Store previous mode
         self.labels: CircularBuffer[Label] = CircularBuffer(Label)
         self.labels.add_item(Label())
         self.labels.get().mode = self.mode  # Initialize mode (default to NONE in deployment)
@@ -103,19 +103,33 @@ class WorkSpace:
             self.replace_marks(line_colour=self.focus_colour)    # Redraw line in "focus" colour
 
     # ==================== MARKS AND POINTS ==================== #
+    # def draw_polygon(self, event=None, *, line_colour=None):
+    #     x, y = event.x, event.y
+    #     line_colour = self.focus_colour if line_colour is None else line_colour
+    #
+    #     current_label: Label = self.labels.get()
+    #     assert current_label.mode == DrawMode.POLYGON
+    #
+    #     if len(current_label.points) > 2:
+    #         poly = self.canvas_frame.create_line(
+    #             *sum(current_label.points, []),
+    #             fill=line_colour,
+    #         )
+    #         current_label.marks.append(poly)
     def draw(self, event=None, *, line_colour=None, line_width=None):
         """Draw points on the screen and write points to labels."""
+        # Parse arguments
         x, y = event.x, event.y
         line_colour = self.focus_colour if line_colour is None else line_colour
         line_width = self.app.bottom_tool_bar.line_width.get() if line_width is None else line_width
 
+        # Get current status
         current_label: Label = self.labels.get()
         current_label.width = line_width
         self.mode = current_label.mode  # Set mode to current label's mode
         points = current_label.points
         prev_x, prev_y = points[-1] if points else (None, None)
         points.append((x, y))   # Add point to label's list of points (spooky action at a distance)
-        print(f"{line_width=}")
         mode = current_label.mode   # TODO - Better in match-case statement
         if mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
