@@ -37,19 +37,19 @@ class App:
     def next_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
-        self.workspace.print()
         self.workspace.display_image(app.image_paths.next_image())
+        print(f"Image: {app.image_paths.get_image_path()}")
 
     def prev_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(app.image_paths.prev_image())
-        self.workspace.print()
+        print(f"Image: {app.image_paths.get_image_path()}")
 
 
 if __name__ == '__main__':
     app = App()
     app.image_paths.load_dir(TEST_IMG_DIR_PATH)
-    app.bottom_tool_bar.line_width.set(10)
+    app.bottom_tool_bar.line_width.set(1)
     app.workspace.display_image(app.image_paths.get_image())
     app.root.mainloop()

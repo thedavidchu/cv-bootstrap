@@ -70,7 +70,6 @@ class Label:
     def loads(self, r: dict) -> bool:
         """Load values from a string."""
         result = True
-        print(r)
         self.label = r.get("category", None)
         if not isinstance(self.label, (str, type(None))):
             self.label = None
