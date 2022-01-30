@@ -10,16 +10,10 @@ import shapely.geometry as g
 
 from Labelling.common.circular_buffer import CircularBuffer
 from Labelling.graphics.workspace.label import DrawMode, Label
-from Labelling.config.constants import AUTHOR
+from Labelling.graphics.popup.popup import show_prompt
+
 
 class WorkSpace:
-    """
-    ## Keyboard Commands
-    Tab - Save and switch to next existing
-    Shift + Tab - Save and switch to previous existing
-    Return - Save and create a new label as the next label
-
-    """
     def __init__(self, app):
         self.app = app
 
@@ -71,7 +65,7 @@ class WorkSpace:
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
     def load_labels(self):
-        label_path: str = self.app.image_paths.get_label_path()
+        label_path: str = self.app.backend.image_paths.get_label_path()
         try:
             with open(label_path) as f:
                 r = json.load(f)
@@ -103,19 +97,6 @@ class WorkSpace:
             self.replace_marks(line_colour=self.focus_colour)    # Redraw line in "focus" colour
 
     # ==================== MARKS AND POINTS ==================== #
-    # def draw_polygon(self, event=None, *, line_colour=None):
-    #     x, y = event.x, event.y
-    #     line_colour = self.focus_colour if line_colour is None else line_colour
-    #
-    #     current_label: Label = self.labels.get()
-    #     assert current_label.mode == DrawMode.POLYGON
-    #
-    #     if len(current_label.points) > 2:
-    #         poly = self.canvas_frame.create_line(
-    #             *sum(current_label.points, []),
-    #             fill=line_colour,
-    #         )
-    #         current_label.marks.append(poly)
     def draw(self, event=None, *, line_colour=None, line_width=None):
         """Draw points on the screen and write points to labels."""
         # Parse arguments
@@ -260,19 +241,20 @@ class WorkSpace:
         """ Save all labels. """
         self.write_to_label()
 
-        if not AUTHOR:
-            raise ValueError("author constant must be specified")
+        # Get author
+        while not self.app.backend.author:
+            self.app.backend.author = show_prompt("Author missing", "Author constant must be specified")
 
         r = {
-            "path": self.app.image_paths.get_image_path(),
+            "path": self.app.backend.image_paths.get_image_path(),
             "categories": ["TODO - the categories of objects (in numerical order)"],
             "category_colours": ["TODO - map categories -> (focus, background colours)"],
             "labels": [label.dumps() for label in self.labels if label],
             "image_size": self.image_size,
-            "author": AUTHOR,
+            "author": self.app.backend.author,
             "timestamp": time.time(),
         }
-        label_path: str = self.app.image_paths.get_label_path()
+        label_path: str = self.app.backend.image_paths.get_label_path()
         with open(label_path, "w") as f:
             json.dump(obj=r, fp=f, indent=4)
 
