@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.filedialog  # Necessary
 from typing import Tuple
 
-from Labelling.config.constants import TEST_IMG_DIR_PATH
+TEST_IMG_DIR_PATH: str = "data/"
 
 
 def tk_open_dir() -> str:
