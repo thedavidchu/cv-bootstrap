@@ -1,7 +1,5 @@
 import os
 
-from Labelling.config.constants import TEST_IMG_FILE_PATH
-
 
 def standardize_path(path: str) -> str:
     """ Convert a path into its absolute version. Remove redundant slashes
@@ -14,4 +12,6 @@ def standardize_path(path: str) -> str:
 
 
 if __name__ == '__main__':
+    TEST_IMG_FILE_PATH: str = "../../data/images/airplane/1.jpg"
+
     print(standardize_path(TEST_IMG_FILE_PATH))
