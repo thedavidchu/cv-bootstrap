@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from PIL import Image
 
-from Labelling.config.constants import TEST_IMG_FILE_PATH, TEST_IMG_DIR_PATH, IMG_EXT
+from Labelling.config.constants import IMG_EXT
 from Labelling.backend.paths import standardize_path
 
 
@@ -83,6 +83,9 @@ class ImagePaths:
 
 
 if __name__ == "__main__":
+    TEST_IMG_FILE_PATH: str = "../../data/images/airplane/1.jpg"
+    TEST_IMG_DIR_PATH: str = "../../data/images/"
+
     test_img_path = TEST_IMG_FILE_PATH
     img = get_image(test_img_path)
     img.show()
