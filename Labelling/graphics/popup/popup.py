@@ -10,6 +10,10 @@ def show_prompt(title: str, prompt: str):
     return x
 
 
+def show_info(title: str, message: str):
+    messagebox.showinfo(title, message)
+
+
 def show_warning(title: str, message: str):
     messagebox.showwarning(title, message)
     warnings.warn(message)
@@ -17,7 +21,7 @@ def show_warning(title: str, message: str):
 
 def show_error(title: str, message: str):
     messagebox.showerror(title, message)
-    raise Exception
+    raise Exception(message)
 
 
 def open_popup(window, title: str = "TITLE HERE", text: str = "TEXT", action: callable = None) -> None:

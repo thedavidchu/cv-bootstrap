@@ -5,7 +5,7 @@ from PIL import Image
 
 from Labelling.backend.paths import standardize_path
 from Labelling.constants.constants import IMAGE_FILE_EXTENSIONS
-from Labelling.graphics.popup.popup import open_popup
+from Labelling.graphics.popup.popup import show_error
 
 def get_image(img_path: str):
     return Image.open(img_path)
@@ -30,7 +30,7 @@ class ImagePaths:
     # Error handling
     def assert_contains_image(self):
         if not len(self._img_paths):
-
+            show_error("No images", "No images are selected for labelling")
             raise ValueError("No images")
 
     # Get paths
