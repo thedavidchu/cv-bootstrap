@@ -7,8 +7,16 @@ Setup
 The steps to setting up this repository include:
 
 1. Install the requirements with `pip install -r requirements.txt` (don't quote me on this)
-2. Setup the configuration file in `Labelling/config` by adding your name under the 'Author' category
-3. You are good to go! Run the `main.py` file
+2. Setup the configuration file in `config.json`
+
+
+Running
+-------
+
+1. Run `main.py`
+2. Click on `File -> Open dir`
+3. Select the directory of images you wish to label
+4. Happy labelling!
 
 
 Modes
