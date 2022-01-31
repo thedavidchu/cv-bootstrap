@@ -11,6 +11,7 @@ from Labelling.graphics.workspace.workspace import WorkSpace
 from Labelling.graphics.file.image_paths import tk_open_dir, tk_open_files
 from Labelling.graphics.popup import popup
 
+
 class App:
     def __init__(self):
         # Graphics

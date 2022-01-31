@@ -1,12 +1,12 @@
 import tkinter as tk
 
-from Labelling.graphics.common import unimplemented_fnc, build_warning
-from Labelling.graphics.workspace.label import DrawMode
+from Labelling.graphics.popup.popup import show_info
 
 
 def show_help():
     with open("INSTRUCTIONS.md") as f:
         text = f.read()
+    show_info("Instructions", text)
     print(text)
 
 
