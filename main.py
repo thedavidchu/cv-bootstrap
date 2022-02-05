@@ -3,12 +3,13 @@ import tkinter as tk
 from Labelling.backend.images import ImagePaths
 
 from Labelling.backend.backend import Backend
+from Labelling.graphics.popup.tk_open_path import tk_open_dir, tk_open_files
+
 from Labelling.graphics.bottomtoolbar.bottomtoolbar import BottomToolBar
 from Labelling.graphics.menubar.menubar import MenuBar
 from Labelling.graphics.toolbar.toolbar import ToolBar
 from Labelling.graphics.workspace.workspace import WorkSpace
 
-from Labelling.graphics.file.image_paths import tk_open_dir, tk_open_files
 from Labelling.graphics.popup import popup
 
 
