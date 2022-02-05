@@ -17,7 +17,6 @@ def config_tool_bar(app):
         "Point": ("1", lambda: app.workspace.change_mode(DrawMode.POINT)),
         "Line": ("2", lambda: app.workspace.change_mode(DrawMode.LINE)),
         "Polygon": ("3", lambda: app.workspace.change_mode(DrawMode.POLYGON)),
-        "Square": ("4", lambda: app.workspace.change_mode(DrawMode.SQUARE))
     }
     rb = []
     for i, (text, (value, cmd)) in enumerate(modes.items()):

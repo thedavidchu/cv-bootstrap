@@ -3,9 +3,9 @@ from typing import List, Tuple
 
 from PIL import Image
 
-from Labelling.config.constants import TEST_IMG_FILE_PATH, TEST_IMG_DIR_PATH, IMG_EXT
 from Labelling.backend.paths import standardize_path
-
+from Labelling.constants.constants import IMAGE_FILE_EXTENSIONS
+from Labelling.graphics.popup.popup import show_error
 
 def get_image(img_path: str):
     return Image.open(img_path)
@@ -13,6 +13,7 @@ def get_image(img_path: str):
 
 class ImagePaths:
     """ An over-engineered, glorified list of image paths that loads paths lazily."""
+
     def __init__(self):
         self._img_paths: List[Tuple[str, str, str]] = []
         self._idx = 0
@@ -23,6 +24,16 @@ class ImagePaths:
     def __getitem__(self, item):
         return get_image(os.path.join(*self._img_paths[item]))
 
+    def __repr__(self):
+        return repr(tuple(map(lambda x: os.path.join(*x), self._img_paths)))
+
+    # Error handling
+    def assert_contains_image(self):
+        if not len(self._img_paths):
+            show_error("No images", "No images are selected for labelling")
+            raise ValueError("No images")
+
+    # Get paths
     def get_image_path(self):
         return os.path.join(*self._img_paths[self._idx])
 
@@ -33,23 +44,22 @@ class ImagePaths:
         r = pre + ".json"
         return r
 
+    # Get images
     def get_image(self):
-        assert len(self._img_paths)
+        self.assert_contains_image()
         return get_image(self.get_image_path())
 
     def next_image(self):
-        assert len(self._img_paths)
+        self.assert_contains_image()
         self._idx = (self._idx + 1) % len(self._img_paths)
         return get_image(self.get_image_path())
 
     def prev_image(self):
-        assert len(self._img_paths)
+        self.assert_contains_image()
         self._idx = (self._idx - 1) % len(self._img_paths)
         return get_image(self.get_image_path())
 
-    def __repr__(self):
-        return repr(tuple(map(lambda x: os.path.join(*x), self._img_paths)))
-
+    # Load paths
     def load_dir(self, top_dir_path: str):
         """ Load a directory of images. """
         self._idx = 0
@@ -58,7 +68,7 @@ class ImagePaths:
         for dir_path, dir_names, file_names in os.walk(top_dir_path):
             for file_name in file_names:
                 _, file_ext = os.path.splitext(file_name)
-                if file_ext.lower() in IMG_EXT:
+                if file_ext.lower() in IMAGE_FILE_EXTENSIONS:
                     # Get relative path compared to top-level image directory
                     # We will use this knowledge to make labels in a similar
                     # structure to our images, but in a different top-level
@@ -75,7 +85,7 @@ class ImagePaths:
         self._idx = 0
         file_path = standardize_path(file_path)
         _, file_ext = os.path.splitext(file_path)
-        if file_ext.lower() in IMG_EXT:
+        if file_ext.lower() in IMAGE_FILE_EXTENSIONS:
             dir_path, file_name = os.path.split(file_path)
             self._img_paths.append((dir_path, "", file_name))
         else:
@@ -83,6 +93,9 @@ class ImagePaths:
 
 
 if __name__ == "__main__":
+    TEST_IMG_FILE_PATH: str = "../../data/images/airplane/1.jpg"
+    TEST_IMG_DIR_PATH: str = "../../data/images/"
+
     test_img_path = TEST_IMG_FILE_PATH
     img = get_image(test_img_path)
     img.show()

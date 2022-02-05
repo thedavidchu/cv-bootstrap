@@ -1,54 +1,53 @@
+import os
+import shutil
 import tkinter as tk
 
-from Labelling.graphics.common import unimplemented_fnc, build_warning
-from Labelling.graphics.workspace.label import DrawMode
+from Labelling.constants.constants import LABEL_FILE_EXTENSIONS
+from Labelling.backend.move_files import move_files
+from Labelling.graphics.popup.tk_open_path import tk_open_dir
+from Labelling.graphics.popup.popup import show_info
 
 
-def config_top_menu_bar(app):
-    top_menu_bar = tk.Menu(app.root)
-    app.root.config(menu=top_menu_bar)
-
-    # File menu
-    file_menu = tk.Menu(top_menu_bar, tearoff=0)
-    file_menu.add_command(label='New', command=unimplemented_fnc)
-    file_menu.add_command(label='Open image directory', command=app.add_img_dir)
-    file_menu.add_command(label='Open image file', command=app.add_img_files)
-    file_menu.add_command(label='Open label directory', command=build_warning("File::Cursor"))
-    file_menu.add_command(label='Open label file', command=build_warning("File::Open label file"))
-    file_menu.add_separator()
-    file_menu.add_command(label='Save Labels', command=build_warning("File::Save Labels"))
-    file_menu.add_separator()
-    file_menu.add_command(label='Exit', command=build_warning("Edit::Cursor"))
-    top_menu_bar.add_cascade(label='File', menu=file_menu)
-
-    # Edit menu
-    edit_menu = tk.Menu(top_menu_bar, tearoff=0)
-    edit_menu.add_command(label='Cursor', command=build_warning("Edit::Cursor"))
-    edit_menu.add_command(label='Add point', command=build_warning("Edit::Add point"))
-    edit_menu.add_command(label='Add line', command=build_warning("Edit::Add line"))
-    edit_menu.add_command(label='Add polygon', command=build_warning("Edit::Add polygon"))
-    edit_menu.add_command(label='Add custom', command=build_warning("Edit::Add custom"))
-    edit_menu.add_command(label='Add full', command=build_warning("Edit::Add full"))
-    edit_menu.add_command(label='Add tag', command=build_warning("Edit::Add tag"))
-    top_menu_bar.add_cascade(label='Edit', menu=edit_menu)
-
-    # View menu
-    view_menu = tk.Menu(top_menu_bar, tearoff=0)
-    view_menu.add_command(label='Zoom in', command=build_warning("View::Zoom in"))
-    view_menu.add_command(label='Zoom out', command=build_warning("View::Zoom out"))
-    view_menu.add_command(label='A', command=build_warning("View::A"))
-    view_menu.add_command(label='B', command=build_warning("View::B"))
-    view_menu.add_command(label='C', command=build_warning("View::C"))
-    top_menu_bar.add_cascade(label='View', menu=view_menu)
-
-    # Help menu
-    help_menu = tk.Menu(top_menu_bar, tearoff=0)
-    help_menu.add_command(label='Help...', command=unimplemented_fnc)
-    top_menu_bar.add_cascade(label='Help', menu=help_menu)
+def show_help():
+    with open("INSTRUCTIONS.md") as f:
+        text = f.read()
+    show_info("Instructions", text)
+    print(text)
 
 
 class MenuBar:
     def __init__(self, app):
         self.app = app
 
-        config_top_menu_bar(app)
+        self.config_top_menu_bar()
+
+    def config_top_menu_bar(self):
+        app = self.app
+        top_menu_bar = tk.Menu(app.root)
+        app.root.config(menu=top_menu_bar)
+
+        # File menu
+        file_menu = tk.Menu(top_menu_bar, tearoff=0)
+        file_menu.add_command(label='Open directory', command=app.add_img_dir)
+        file_menu.add_command(label='Open file', command=app.add_img_files)
+        file_menu.add_separator()
+        file_menu.add_command(label='Export labels', command=self.export_labels)
+        top_menu_bar.add_cascade(label='File', menu=file_menu)
+
+        # Edit menu
+        edit_menu = tk.Menu(top_menu_bar, tearoff=0)
+        top_menu_bar.add_cascade(label='Edit', menu=edit_menu)
+
+        # View menu
+        view_menu = tk.Menu(top_menu_bar, tearoff=0)
+        top_menu_bar.add_cascade(label='View', menu=view_menu)
+
+        # Help menu
+        help_menu = tk.Menu(top_menu_bar, tearoff=0)
+        help_menu.add_command(label='Help...', command=show_help)
+        top_menu_bar.add_cascade(label='Help', menu=help_menu)
+
+    def export_labels(self, event=None):
+        src_dir = tk_open_dir(title="Source directory (where labels are currently)")
+        dst_dir = tk_open_dir(title="Destination directory (where to put the labels)")
+        return move_files(src_dir, dst_dir, file_ext=LABEL_FILE_EXTENSIONS)
