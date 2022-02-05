@@ -5,7 +5,8 @@ from PIL import Image
 
 from Labelling.backend.paths import standardize_path
 from Labelling.constants.constants import IMAGE_FILE_EXTENSIONS
-from Labelling.graphics.popup.popup import show_error
+from Labelling.graphics.popup.popup import show_error, show_warning
+
 
 def get_image(img_path: str):
     return Image.open(img_path)
@@ -34,6 +35,9 @@ class ImagePaths:
             raise ValueError("No images")
 
     # Get paths
+    def get_idx(self):
+        return self._idx
+
     def get_image_path(self):
         return os.path.join(*self._img_paths[self._idx])
 
@@ -57,6 +61,14 @@ class ImagePaths:
     def prev_image(self):
         self.assert_contains_image()
         self._idx = (self._idx - 1) % len(self._img_paths)
+        return get_image(self.get_image_path())
+
+    def set_image(self, idx):
+        self.assert_contains_image()
+        self._idx = idx % len(self._img_paths)
+
+        if idx >= len(self._img_paths):
+            show_warning("Index larger than number of images", "Uh-oh. I moduloed it")
         return get_image(self.get_image_path())
 
     # Load paths
