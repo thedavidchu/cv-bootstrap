@@ -1,16 +1,17 @@
 # Computer Vision Data Labeller (ArtisticCV)
 
-Formerly, cv-bootstrap.
+Formerly known as cv-bootstrap until Spencer Teetaert pointed out that it is not a bootstrap. I acquiesced. This project was created for the robotics club called the _Autonomous Rover Team_ (or ART for short), hence the name "Artistic". Also because the GUI lets you draw beautiful artwork.
 
 ## Purpose
 Data labeller for a computer vision project.
 
 ## Compatibility
-I am going to only work on `.png` and `.jpeg` files to start. I will add conversions as we progress.
+This project works with `.png`, `.jpeg`, and `.jpg` image files. More image types will be added.
+
+The labels are `.json` files.
 
 ## Dependencies
 See `requirements.txt`
 
-
 ## Instructions
-See INSTRUCTIONS.md
+See `INSTRUCTIONS.md`
