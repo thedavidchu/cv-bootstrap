@@ -30,22 +30,32 @@ class App:
 
     def add_img_dir(self):
         self.backend.image_paths.load_dir(tk_open_dir())
-        self.workspace.display_image(self.backend.image_paths.next_image())
+        self.bottom_tool_bar.renew_progress_bar()
+        self.workspace.display_image(self.backend.image_paths.get_image())
 
     def add_img_files(self):
         self.backend.image_paths.load_files(tk_open_files())
-        self.workspace.display_image(self.backend.image_paths.next_image())
+        self.workspace.display_image(self.backend.image_paths.get_image())
+
+    def change_image(self, event=None, idx: int = None):
+        self.workspace.save()
+        self.workspace.reset_workspace()
+        self.workspace.display_image(self.backend.image_paths.set_image(idx))
+        self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
+        print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def next_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(self.backend.image_paths.next_image())
+        self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def prev_image(self, event=None):
         self.workspace.save()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(self.backend.image_paths.prev_image())
+        self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
 
