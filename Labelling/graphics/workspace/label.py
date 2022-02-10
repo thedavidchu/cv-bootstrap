@@ -31,6 +31,25 @@ class Label:
     def __repr__(self):
         return f"{self.label}: {self.points}"
 
+    def __eq__(self, other):
+        # Check that it is indeed a label
+        assert isinstance(other, type(self))
+        other: Label = other
+        if self.label != other.label:
+            return False
+        if self.points != other.points:
+            return False
+        if self.mode != other.mode:
+            return False
+        if self.width != other.width:
+            return False
+        # Aesthetics
+        if self.colour != other.colour:
+            return False
+        # NOTE: we skip comparing marks, because the marks may not be loaded and
+        # are entirely determined by the points, mode, width, and colour.
+        return True
+
     def add_label(self, label):
         """ Add or modify a label."""
         if self.label is None:
@@ -39,18 +58,20 @@ class Label:
             warnings.warn("Overwriting previous label")
             self.label = label
 
-    def change_mode(self, mode: DrawMode):
+    def set_mode(self, mode: DrawMode):
         self.mode = mode
+
+    def set_width(self, width: int):
+        self.width = width
+
+    def set_colour(self, colour: str):
+        self.colour = colour
 
     def dumps(self) -> Dict[str, str]:
         r = None
         if self.mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
-        elif self.mode == DrawMode.POINT:
-            r = self.points
-        elif self.mode == DrawMode.LINE:
-            r = self.points
-        elif self.mode == DrawMode.POLYGON:
+        elif self.mode in {DrawMode.POINT, DrawMode.LINE, DrawMode.POLYGON}:
             r = self.points
         elif self.mode == DrawMode.SQUARE:
             assert len(self.points) == 2
@@ -89,7 +110,6 @@ class Label:
             self.mode = DrawMode[r.get("mode", "NONE")]
         except KeyError:
             self.mode = DrawMode.NONE
-            result = False
             assert False
 
         self.colour = r.get("colour", "#00ff00")
