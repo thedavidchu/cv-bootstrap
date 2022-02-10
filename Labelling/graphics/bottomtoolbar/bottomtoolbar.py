@@ -26,23 +26,23 @@ class BottomToolBar:
 
         # Create modes
         tk.Label(self.bottomtoolbar_frame, text="Mode").grid(row=1, column=1)
-        mode_var = tk.StringVar(self.bottomtoolbar_frame, "2")
+        self.mode = tk.StringVar(self.bottomtoolbar_frame, DrawMode.POLYGON)
         modes = {
-            "Cursor": ("0", lambda: self.app.workspace.change_mode(DrawMode.NONE)),
-            "Point": ("1", lambda: self.app.workspace.change_mode(DrawMode.POINT)),
-            "Line": ("2", lambda: self.app.workspace.change_mode(DrawMode.LINE)),
-            "Polygon": ("3", lambda: self.app.workspace.change_mode(DrawMode.POLYGON)),
+            "Cursor": (DrawMode.NONE, lambda: self.app.workspace.set_mode(DrawMode.NONE)),
+            "Point": (DrawMode.POINT, lambda: self.app.workspace.set_mode(DrawMode.POINT)),
+            "Line": (DrawMode.LINE, lambda: self.app.workspace.set_mode(DrawMode.LINE)),
+            "Polygon": (DrawMode.POLYGON, lambda: self.app.workspace.set_mode(DrawMode.POLYGON)),
         }
         self.radiobutton = []
         for i, (text, (value, cmd)) in enumerate(modes.items()):
             rb = tk.Radiobutton(
-                self.bottomtoolbar_frame, text=text, variable=mode_var, value=value,
-                indicator=0, background="light blue", command=cmd
+                self.bottomtoolbar_frame, text=text, variable=self.mode,
+                value=value, indicator=0, background="light blue", command=cmd
             )
             rb.grid(row=1, column=i + 2)
             self.radiobutton.append(rb)
         self.radiobutton[2].select()
-        mode_var.set("2")   # This should set it...
+        self.mode.set(DrawMode.POLYGON)   # This should set it...
 
         # Line + Point Colour + Size
         tk.Label(self.bottomtoolbar_frame, text="Line Thickness").grid(row=2, column=1)
