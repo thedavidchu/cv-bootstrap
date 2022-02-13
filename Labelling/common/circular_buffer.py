@@ -7,11 +7,52 @@ class CircularBuffer:
         self._items: List[dtype] = []
         self._idx: int = 0
 
+        # For iteration
+        self._iteration_start: int = None
+        self._iteration_idx: int = None
+
     def __repr__(self):
-        return repr(self._items)
+        return (
+            f"({len(self._items)}, {self._dtype}) "
+            f"{repr(self._items[self._idx:] + self._items[:self._idx])}"
+        )
 
     def __len__(self):
         return len(self._items)
+
+    def __getitem__(self, key):
+        if not isinstance(key, int):
+            return TypeError("key must be an int")
+        elif key >= len(self._items):
+            raise IndexError("key must be smaller than the number of elements")
+        elif key < -len(self._items):
+            raise IndexError(
+                "key must be greater than or equal to the negative number of "
+                "elements"
+            )
+        return self._items[(self._idx + key) % len(self._items)]
+
+    def __iter__(self):
+        self._iteration_start = self._idx
+        self._iteration_idx = 0
+        return self
+
+    def __next__(self):
+        # Adding to the circular buffer during iteration is legal,
+        # however I have not thought through what the behaviour is
+        # like. I was thinking of putting a boolean flag to block the
+        # addition of items during iteration, but this would not be
+        # ideal because if one interrupts the iteration, one would have
+        # to manually reset this flag.
+        if self._iteration_start is None or self._iteration_idx is None:
+            raise ValueError("no iteration loop setup")
+
+        if self._iteration_idx >= len(self._items):
+            raise StopIteration
+        else:
+            r = self._items[self._iteration_start + self._iteration_idx]
+            self._iteration_idx += 1
+            return r
 
     def __eq__(self, other):
         """Requires other is
@@ -37,52 +78,84 @@ class CircularBuffer:
         else:
             return False
 
-    # For iteration
-    def __getitem__(self, key):
-        return self._items[key]
+    ####
+    #   IDX METHODS
+    ####
 
-    def add_item(self, arg):
-        self._items.insert(self._idx + 1, arg)
+    def _increment_idx(self, delta: int):
+        """Increment the _idx by a certain delta if there is a non-zero
+        length."""
+        self._idx = (
+            (self._idx + delta) % len(self._items)
+            if len(self._items)
+            else 0
+        )
+
+    ####
+    #   ITEM METHODS
+    ####
+
+    def insert(self, item):
+        """Insert an item after the current item and go to the new item."""
+        if not isinstance(item, self._dtype):
+            raise TypeError(f"Expected type {self._dtype}")
+        self._items.insert(self._idx + 1, item)
+        self._increment_idx(1)
+
+    def delete(self):
+        """Delete the current item and keep the index the same (effectively
+        moving to the next)."""
+        if not self._items:
+            raise ValueError("no more items to delete")
+        self._items.pop(self._idx)
+        self._idx = self._idx % len(self._items) if len(self._items) else 0
 
     def get(self):
-        """ Get current item. """
-        if self._items:
-            return self._items[self._idx]
-        raise IndexError("items is empty")
+        """Get current item."""
+        if not self._items:
+            raise IndexError("items is empty")
+        return self._items[self._idx]
+
+    ####
+    #   NEXT AND PREVIOUS
+    ####
+
+    def next(self):
+        """Step forward and return that item."""
+        if not self._items:
+            raise IndexError("items is empty")
+        self._increment_idx(1)
+        return self._items[self._idx]
+
+    def prev(self):
+        """Step backward and return that item."""
+        if not self._items:
+            raise IndexError("items is empty")
+        self._increment_idx(-1)
+        return self._items[self._idx]
+
+    ####
+    #   EXTERNAL METHODS
+    ####
 
     def to_list(self):
-        """Return a self._items, starting at items"""
+        """Return a self._items, starting at the current index"""
         r = [None] * len(self._items)
         for i, item in enumerate(self._items):
             r[(self._idx + i) % len(self._items)] = item
         return r
 
-    def from_list(self, new_list):
+    def from_list(self, new_list: List):
+        """Fill an empty circular buffer with a new list."""
+        # Check that the current list is empty
+        if self._items:
+            raise ValueError("this object already has items")
+        # Check input is a list (a tuple will no suffice, because we will use
+        # list methods on this object in other methods.
+        if not isinstance(new_list, list):
+            raise TypeError("invalid input list")
+        # Assert all items are the expected type
+        if not all(map(lambda item: isinstance(item, self._dtype), new_list)):
+            raise TypeError("not all values are the same type in the list")
         self._items = new_list
-
-    def insert_after_current(self, value):
-        """ Insert a value after the current index. Note that this is an O(N) operation. """
-        if not isinstance(value, self._dtype):
-            raise TypeError(f"Expected type {self._dtype}")
-        self._items.insert(self._idx + 1, value)
-
-    def delete_current(self):
-        """ Delete the current item and keep the index the same (effectively moving to the next)"""
-        if self._items:
-            self._items.pop(self._idx)
-            num = len(self._items)
-            self._idx = self._idx % num if num else 0
-
-    def next(self):
-        """ Step forward and return that item. """
-        if self._items:
-            self._idx = (self._idx + 1) % len(self._items)
-            return self._items[self._idx]
-        raise IndexError("items is empty")
-
-    def prev(self):
-        """ Step backward and return that item. """
-        if self._items:
-            self._idx = (self._idx - 1) % len(self._items)
-            return self._items[self._idx]
-        raise IndexError("items is empty")
+        self._idx = 0
