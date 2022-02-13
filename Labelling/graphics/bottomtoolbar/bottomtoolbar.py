@@ -1,7 +1,7 @@
 import tkinter as tk
 
-from Labelling.graphics.common import build_warning
-from Labelling.graphics.workspace.label import DrawMode
+from Labelling.common.unimplemented import build_warning
+from Labelling.backend.label import DrawMode
 
 
 class BottomToolBar:
@@ -41,14 +41,17 @@ class BottomToolBar:
             )
             rb.grid(row=1, column=i + 2)
             self.radiobutton.append(rb)
-        self.radiobutton[2].select()
+        self.radiobutton[2].select()   # This should set it...
         self.mode.set(DrawMode.POLYGON)   # This should set it...
 
         # Line + Point Colour + Size
         tk.Label(self.bottomtoolbar_frame, text="Line Thickness").grid(row=2, column=1)
         self.line_width = tk.Scale(
             self.bottomtoolbar_frame, from_=0, to=30, orient=tk.HORIZONTAL, length=30,
-            command=lambda x: app.workspace.replace_marks(line_colour=app.workspace.focus_colour)
+            command=lambda x: app.workspace.replace_focused(
+                line_colour=app.workspace.focus_colour,
+                line_width=self.line_width.get(),
+            )
         )
         self.line_width.grid(row=2, column=1)
 

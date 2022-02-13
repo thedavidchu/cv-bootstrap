@@ -4,7 +4,7 @@ import tkinter as tk
 
 from Labelling.constants.constants import LABEL_FILE_EXTENSIONS
 from Labelling.backend.move_files import move_files
-from Labelling.graphics.popup.tk_open_path import tk_open_dir
+from Labelling.backend.tk_open_path import tk_open_dir
 from Labelling.graphics.popup.popup import show_info
 
 

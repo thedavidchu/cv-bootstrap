@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from Labelling.graphics.common import build_warning
+from Labelling.common.unimplemented import build_warning
 
 def config_tool_bar(app):
     r = []

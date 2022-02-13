@@ -3,7 +3,7 @@ import tkinter as tk
 from Labelling.backend.images import ImagePaths
 
 from Labelling.backend.backend import Backend
-from Labelling.graphics.popup.tk_open_path import tk_open_dir, tk_open_files
+from Labelling.backend.tk_open_path import tk_open_dir, tk_open_files
 
 from Labelling.graphics.bottomtoolbar.bottomtoolbar import BottomToolBar
 from Labelling.graphics.menubar.menubar import MenuBar
@@ -38,21 +38,21 @@ class App:
         self.workspace.display_image(self.backend.image_paths.get_image())
 
     def change_image(self, event=None, idx: int = None):
-        self.workspace.save()
+        self.workspace.save_all_labels()
         self.workspace.reset_workspace()
         self.workspace.display_image(self.backend.image_paths.set_image(idx))
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def next_image(self, event=None):
-        self.workspace.save()   # Automatically save workspace -- may be unintuitive
+        self.workspace.save_all_labels()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(self.backend.image_paths.next_image())
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def prev_image(self, event=None):
-        self.workspace.save()   # Automatically save workspace -- may be unintuitive
+        self.workspace.save_all_labels()   # Automatically save workspace -- may be unintuitive
         self.workspace.reset_workspace()
         self.workspace.display_image(self.backend.image_paths.prev_image())
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
