@@ -162,27 +162,30 @@ class WorkSpace:
             outline="")
         self.get_label().marks.append(point_mark)
 
-    def draw_line(self, x: int, y:int, colour: str, width: int):
-        """Assumes that there is a previous point!"""
+    def draw_line(
+        self, x0: int, y0: int, x1: int, y1: int, colour: str, width: int
+    ):
+        """Draw a point between two points."""
         label: Label = self.get_label()
 
         # Draw line
-        prev_x, prev_y = label.points[-1] if label.points else (None, None)
-        if prev_x is None or prev_y is None:
-            raise ValueError("expected previous point to exist")
         line_mark = self.canvas_frame.create_line(
-            x,
-            y,
-            prev_x,
-            prev_y,
+            x0,
+            y0,
+            x1,
+            y1,
             fill=colour,
             width=width,
         )
         self.get_label().marks.append(line_mark)
 
     def draw(
-        self, mode: DrawMode, x: int, y: int, colour: str, width: int,
-        record_point: bool
+        self,
+        mode: DrawMode,
+        x: int, y: int,
+        prev_x: int, prev_y: int,
+        colour: str, width: int,
+        record_point: bool,
     ):
         if mode == DrawMode.NONE:
             # Do nothing (don't even add point)
@@ -193,15 +196,23 @@ class WorkSpace:
                 self.record_point(x=x, y=y)
             self.draw_point(x=x, y=y, colour=colour, width=width)
         elif mode == DrawMode.LINE:
-            if self.get_label().points:  # We have at least one previous point
-                self.draw_line(x=x, y=y, colour=colour, width=width)
+            # We have at least one previous point
+            if prev_x is not None and prev_y is not None:
+                self.draw_line(
+                    x0=x, y0=y, x1=prev_x, y1=prev_y, colour=colour,
+                    width=width
+                )
             # This is after the previous in case we get an error
             if record_point:
                 self.record_point(x=x, y=y)
             self.draw_point(x=x, y=y, colour=colour, width=width)
         elif mode == DrawMode.POLYGON:
-            if self.get_label().points:  # We have at least one previous point
-                self.draw_line(x=x, y=y, colour=colour, width=width)
+            # We have at least one previous point
+            if prev_x is not None and prev_y is not None:
+                self.draw_line(
+                    x0=x, y0=y, x1=prev_x, y1=prev_y, colour=colour,
+                    width=width
+                )
             # This is after the previous in case we get an error
             if record_point:
                 self.record_point(x=x, y=y)
@@ -215,8 +226,15 @@ class WorkSpace:
             )
 
     def handle_click(self, event):
+        prev_point = (
+            self.get_label().points[-1]
+            if self.get_label().points
+            else (None, None)
+        )
         self.draw(
-            mode=self.get_mode(), x=event.x, y=event.y,
+            mode=self.get_mode(),
+            x=event.x, y=event.y,
+            prev_x=prev_point[0], prev_y=prev_point[1],
             colour=self.focus_colour, width=self.get_line_width(),
             record_point=True
         )
@@ -260,9 +278,9 @@ class WorkSpace:
         """Delete all marks in the current focussed geometry."""
         current_label: Label = self.get_label()
         # TODO: test `map(self.canvas_frame.delete, current_label.marks)`
-        map(self.canvas_frame.delete, current_label.marks)
-        # for mark in current_label.marks:
-        #     self.canvas_frame.delete(mark)
+        # map(self.canvas_frame.delete, current_label.marks)
+        for mark in current_label.marks:
+            self.canvas_frame.delete(mark)
 
     def handle_backspace(self, _=None):
         self.delete_one_point()
@@ -280,14 +298,19 @@ class WorkSpace:
         """Draw or redraw the focussed line."""
         self.erase_focused()
         mode = self.get_mode()
+        prev_x, prev_y = None, None
         for x, y in self.get_label().points:
             self.draw(
                 mode=mode,
                 x=x, y=y,
-                colour=line_colour,
-                width=line_width,
+                prev_x=prev_x, prev_y=prev_y,
+                colour=line_colour, width=line_width,
+                # Do not record point, otherwise this will lead to an infinite
+                # loop as we add to the list we are iterating over
                 record_point=False,
             )
+            # Remember previous x, y
+            prev_x, prev_y = x, y
 
     ############################################################################
 
@@ -400,19 +423,15 @@ class WorkSpace:
         draw_mode = self.labels.get().mode
         # Save and redraw the line in the "background" colour
         self.finish_label()
-        print("a")
         self.replace_focused(
             line_colour=self.background_colour, line_width=self.get_line_width()
         )
-        print("b")
         # Create new label and switch to it implicitly
         self.labels.insert(Label())
         # Set draw mode the same as previously and set the mode as the stored
         # mode for the next label and redraw line in the "focus" colour
         self.labels.get().mode = draw_mode
-        print("c")
         self.set_mode(draw_mode)
-        print("d")
 
     ############################################################################
 
