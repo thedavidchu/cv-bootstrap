@@ -9,11 +9,15 @@ class BottomToolBar:
         self.app = app
 
         # Create Frame
-        self.bottomtoolbar_frame = tk.LabelFrame(app.root, text="Bottom Tool Bar")
+        self.bottomtoolbar_frame = tk.LabelFrame(
+            app.root, text="Bottom Tool Bar"
+        )
         self.bottomtoolbar_frame.pack(anchor=tk.N, fill="both")
 
         # Create progress bar
-        tk.Label(self.bottomtoolbar_frame, text="Progress").grid(row=0, column=1)
+        tk.Label(
+            self.bottomtoolbar_frame, text="Progress"
+        ).grid(row=0, column=1)
         self.progress_bar = tk.Scale(
             self.bottomtoolbar_frame,
             from_=0,
@@ -28,10 +32,22 @@ class BottomToolBar:
         tk.Label(self.bottomtoolbar_frame, text="Mode").grid(row=1, column=1)
         self.mode = tk.StringVar(self.bottomtoolbar_frame, DrawMode.POLYGON)
         modes = {
-            "Cursor": (DrawMode.NONE, lambda: self.app.workspace.set_mode(DrawMode.NONE)),
-            "Point": (DrawMode.POINT, lambda: self.app.workspace.set_mode(DrawMode.POINT)),
-            "Line": (DrawMode.LINE, lambda: self.app.workspace.set_mode(DrawMode.LINE)),
-            "Polygon": (DrawMode.POLYGON, lambda: self.app.workspace.set_mode(DrawMode.POLYGON)),
+            "Cursor": (
+                DrawMode.NONE,
+                lambda: self.app.workspace.set_mode(DrawMode.NONE)
+            ),
+            "Point": (
+                DrawMode.POINT,
+                lambda: self.app.workspace.set_mode(DrawMode.POINT)
+            ),
+            "Line": (
+                DrawMode.LINE,
+                lambda: self.app.workspace.set_mode(DrawMode.LINE)
+            ),
+            "Polygon": (
+                DrawMode.POLYGON,
+                lambda: self.app.workspace.set_mode(DrawMode.POLYGON)
+            ),
         }
         self.radiobutton = []
         for i, (text, (value, cmd)) in enumerate(modes.items()):
@@ -59,6 +75,7 @@ class BottomToolBar:
         self.line_width.grid(row=2, column=2)
 
     def renew_progress_bar(self):
+        """Refreshes the progress bar when we load a new image directory."""
         self.progress_bar.destroy()
         self.progress_bar = tk.Scale(
             self.bottomtoolbar_frame,
