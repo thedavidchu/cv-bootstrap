@@ -41,7 +41,6 @@ class BottomToolBar:
             )
             rb.grid(row=1, column=i + 2)
             self.radiobutton.append(rb)
-        self.radiobutton[2].select()   # This should set it...
         self.mode.set(DrawMode.POLYGON)   # This should set it...
 
         # Line + Point Colour + Size
@@ -50,9 +49,8 @@ class BottomToolBar:
         ).grid(row=2, column=1)
         self.line_width = tk.Scale(
             self.bottomtoolbar_frame,
-            from_=0, to=30,
+            from_=0, to=30,  # There is NO length argument.
             orient=tk.HORIZONTAL,
-            length=30,
             command=lambda x: app.workspace.replace_focused(
                 line_colour=app.workspace.focus_colour,
                 line_width=self.line_width.get(),
