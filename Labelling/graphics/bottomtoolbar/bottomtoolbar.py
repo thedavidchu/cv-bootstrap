@@ -45,15 +45,20 @@ class BottomToolBar:
         self.mode.set(DrawMode.POLYGON)   # This should set it...
 
         # Line + Point Colour + Size
-        tk.Label(self.bottomtoolbar_frame, text="Line Thickness").grid(row=2, column=1)
+        tk.Label(
+            self.bottomtoolbar_frame, text="Line Thickness"
+        ).grid(row=2, column=1)
         self.line_width = tk.Scale(
-            self.bottomtoolbar_frame, from_=0, to=30, orient=tk.HORIZONTAL, length=30,
+            self.bottomtoolbar_frame,
+            from_=0, to=30,
+            orient=tk.HORIZONTAL,
+            length=30,
             command=lambda x: app.workspace.replace_focused(
                 line_colour=app.workspace.focus_colour,
                 line_width=self.line_width.get(),
             )
         )
-        self.line_width.grid(row=2, column=1)
+        self.line_width.grid(row=2, column=2)
 
     def renew_progress_bar(self):
         self.progress_bar.destroy()

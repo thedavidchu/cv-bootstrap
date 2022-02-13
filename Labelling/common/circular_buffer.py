@@ -50,7 +50,9 @@ class CircularBuffer:
         if self._iteration_idx >= len(self._items):
             raise StopIteration
         else:
-            r = self._items[self._iteration_start + self._iteration_idx]
+            r = self._items[
+                (self._iteration_start + self._iteration_idx) % len(self._items)
+            ]
             self._iteration_idx += 1
             return r
 
@@ -140,6 +142,7 @@ class CircularBuffer:
 
     def to_list(self):
         """Return a self._items, starting at the current index"""
+        raise DeprecationWarning("deprecated")
         r = [None] * len(self._items)
         for i, item in enumerate(self._items):
             r[(self._idx + i) % len(self._items)] = item

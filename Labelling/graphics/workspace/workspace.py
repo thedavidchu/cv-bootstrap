@@ -1,4 +1,3 @@
-import os.path
 import tkinter as tk
 import json
 import time
@@ -59,6 +58,33 @@ class WorkSpace:
 
     ############################################################################
 
+    def set_image(
+        self,
+        old_image_path: str,
+        old_label_path: str,
+        new_image: str,
+        new_label_path: str,
+    ):
+        """Public method. Save the current labels (may be unintuitive), change
+        the image, and load the labels if they can be found."""
+        # May be unintuitive to automatically save. I like it because it is one
+        # fewer step to remember. On the flip side, it may be harder to revert
+        # unwanted changes.
+        self.save(
+            author=self.get_author(),
+            image_path=old_image_path,
+            label_path=old_label_path,
+        )
+        self.reset_workspace()
+        # Note about previous design:
+        # The function that changes the state and returns the new state needs to
+        # be called here (after the save and reset) because it has side-effects
+        # that change the state of the label name as well as returning the next
+        # image. (It changes the app's label path to the new label path and
+        # returns the label path as well.) I know this is horrible practice.
+        self.display_image(new_image)
+        self.load_labels(new_label_path)
+
     def reset_workspace(self):
         """Reset the workspace to the blank slate."""
         self.labels: CircularBuffer[Label] = CircularBuffer(Label)
@@ -77,8 +103,7 @@ class WorkSpace:
         self.tag_frame = tk.LabelFrame(self.workspace_frame)
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
-    def load_labels(self):
-        label_path: str = self.app.backend.image_paths.get_label_path()
+    def load_labels(self, label_path: str):
         # Try to load the json file
         try:
             with open(label_path) as f:
@@ -98,9 +123,13 @@ class WorkSpace:
             self.goto_new_label()
             label: Label = self.labels.get()
             assert label.loads(raw_label)
-            self.mode = label.mode  # Cannot be NONE
-            self.background_colour = label.colour if label.colour else self.background_colour
-            self.app.bottom_tool_bar.line_width.set(label.width)    # Set width
+            self.set_mode(label.mode)   # Implicitly draws
+            self.set_line_width(label.width)    # Implicitly draws
+            # TODO replace with `self.set_colour(label.colour)`
+            self.background_colour = (
+                label.colour if label.colour else self.background_colour
+            )
+            # Redundant
             self.replace_focused(
                 line_colour=self.focus_colour, line_width=label.width
             )
@@ -277,8 +306,8 @@ class WorkSpace:
     def erase_focused(self):
         """Delete all marks in the current focussed geometry."""
         current_label: Label = self.get_label()
-        # TODO: test `map(self.canvas_frame.delete, current_label.marks)`
-        # map(self.canvas_frame.delete, current_label.marks)
+        # We cannot do the below with an iterator/generator (like map) because
+        # it is lazy and does not do the execution until we call it.
         for mark in current_label.marks:
             self.canvas_frame.delete(mark)
 
@@ -314,6 +343,14 @@ class WorkSpace:
 
     ############################################################################
 
+    def get_author(self):
+        # Prompt to record author if missing (repeatedly if necessary)
+        while not self.app.backend.author:
+            self.app.backend.author = show_prompt(
+                "Author missing", "Author must be specified!"
+            )
+        return self.app.backend.author
+
     def finish_label(self):
         """Finish a label"""
         # Complete polygon, draw partially transparent polygon on canvas
@@ -327,39 +364,61 @@ class WorkSpace:
             else:
                 self.handle_click(g.Point(first_x, first_y))
 
-    def save_all_labels(self, _=None):
+    def handle_save(self, _=None):
+        self.save(
+            author=self.get_author(),   # Prompts if necessary
+            image_path=self.app.backend.image_paths.get_image_path(),
+            label_path=self.app.backend.image_paths.get_label_path(),
+        )
+
+    def save(
+        self, author: str, image_path: str, label_path: str
+    ):
+        """A pure(-ish) function that captures the state provided to it. The
+        only unpure aspect is capturing the time, but if someone changes the
+        time, there are other worse things going on."""
         self.finish_label()
 
-        # Prompt to record author if missing (repeatedly if necessary)
-        while not self.app.backend.author:
-            self.app.backend.author = show_prompt(
-                "Author missing", "Author must be specified!"
-            )
-
-        obj_to_write = {
-            "path": self.app.backend.image_paths.get_image_path(),
+        write_obj = {
+            "path": image_path,
             "categories": [
-                "TODO - the categories of objects (in numerical order)"],
-            "category_colours": [
-                "TODO - map categories -> (focus, background colours)"],
-            "labels": [
-                label.dumps() for label in self.labels.to_list() if label
+                "TODO - the categories of objects (in numerical order)"
             ],
+            "category_colours": [
+                "TODO - map categories -> (focus, background colours)"
+            ],
+            # TODO if we are currently on a non-label, start with the previous
+            # label that was a label. (e.g. if draw a label and then create a
+            # new label (but don't draw anything), when we save and come back,
+            # we should go to the first label we drew). I think this will have
+            # to be implemented with lazy loading of the "new label" (e.g. if we
+            # create a new label, we won't create it until we actually draw
+            # anything. Also if we delete a label, we delete it right away). We
+            # need to better define what happens when we are on a label with no
+            # points.
+            "labels": [label.dumps() for label in self.labels if label],
             "image_size": self.image_size,
-            "author": self.app.backend.author,
+            "author": author,
             "timestamp": time.time(),
         }
-        label_path: str = self.app.backend.image_paths.get_label_path()
         # Save only if change is made
-        with open(label_path) as f:
-            obj_to_read = json.load(f)
+        try:
+            # Try opening the file
+            with open(label_path) as f:
+                read_obj = json.load(f)
+        except FileNotFoundError:
+            # Set to an empty object that will not evaluate to equal to another
+            # object. We want to create an empty json even if no labels were
+            # added to mark it as 'done'.
+            read_obj = {}
         if not all(
-            # Check all _except_ timestamp is identical
-            obj_to_read[key] == obj_to_write[key]
-            for key in obj_to_write.keys() if key != "timestamp"
+            # Check all _except_ timestamp is identical. If a key is missing in
+            # the read_obj, we consider this a mismatch and return False.
+            read_obj[key] == write_obj[key] if key in read_obj else False
+            for key in write_obj.keys() if key != "timestamp"
         ):
             with open(label_path, "w") as f:
-                json.dump(obj=obj_to_write, fp=f, indent=4)
+                json.dump(obj=write_obj, fp=f, indent=4)
 
     ############################################################################
 
@@ -451,7 +510,7 @@ class WorkSpace:
         self.canvas_frame.bind("<Left>", self.goto_prev_label)
         self.canvas_frame.bind("<Delete>", self.handle_delete)
         self.canvas_frame.bind("<Return>", self.goto_new_label)
-        self.canvas_frame.bind("<Control-s>", self.save_all_labels)
+        self.canvas_frame.bind("<Control-s>", self.handle_save)
         self.canvas_frame.bind("<BackSpace>", self.handle_backspace)
         # External commands
         self.canvas_frame.bind("<greater>", self.app.next_image)
@@ -459,5 +518,3 @@ class WorkSpace:
         # Attach image
         self.image = ImageTk.PhotoImage(image)
         self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
-        # Load if applicable
-        self.load_labels()

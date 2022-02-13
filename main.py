@@ -38,23 +38,32 @@ class App:
         self.workspace.display_image(self.backend.image_paths.get_image())
 
     def change_image(self, event=None, idx: int = None):
-        self.workspace.save_all_labels()
-        self.workspace.reset_workspace()
-        self.workspace.display_image(self.backend.image_paths.set_image(idx))
+        self.workspace.set_image(
+            old_image_path=self.backend.image_paths.get_image_path(),
+            old_label_path=self.backend.image_paths.get_label_path(),
+            new_image=self.backend.image_paths.set_image(idx),
+            new_label_path=self.backend.image_paths.get_label_path(),
+        )
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def next_image(self, event=None):
-        self.workspace.save_all_labels()   # Automatically save workspace -- may be unintuitive
-        self.workspace.reset_workspace()
-        self.workspace.display_image(self.backend.image_paths.next_image())
+        self.workspace.set_image(
+            old_image_path=self.backend.image_paths.get_image_path(),
+            old_label_path=self.backend.image_paths.get_label_path(),
+            new_image=self.backend.image_paths.next_image(),
+            new_label_path=self.backend.image_paths.get_label_path(),
+        )
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
     def prev_image(self, event=None):
-        self.workspace.save_all_labels()   # Automatically save workspace -- may be unintuitive
-        self.workspace.reset_workspace()
-        self.workspace.display_image(self.backend.image_paths.prev_image())
+        self.workspace.set_image(
+            old_image_path=self.backend.image_paths.get_image_path(),
+            old_label_path=self.backend.image_paths.get_label_path(),
+            new_image=self.backend.image_paths.prev_image(),
+            new_label_path=self.backend.image_paths.get_label_path(),
+        )
         self.bottom_tool_bar.progress_bar.set(self.backend.image_paths.get_idx())
         print(f"Image: {self.backend.image_paths.get_image_path()}")
 
