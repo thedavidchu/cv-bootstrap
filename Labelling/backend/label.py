@@ -88,33 +88,37 @@ class Label:
             "width": self.width,
         }
 
-    def loads(self, r: dict) -> bool:
+    @classmethod
+    def loads(cls, r: dict) -> bool:
         """Load values from a string."""
-        result = True
-        self.label = r.get("category", None)
-        if not isinstance(self.label, (str, type(None))):
-            self.label = None
-            result = False
-            assert False
+        result = cls()
+        result.label = r.get("category", None)
+        if not isinstance(result.label, (str, type(None))):
+            result.label = None
+            raise TypeError(
+                f"label was type {type(result.label)}, expected label to "
+                f"either be a string or None"
+            )
 
-        self.points = r.get("geometry", [])
-        if not isinstance(self.points, list)\
-                and all(map(lambda point: isinstance(point, list), self.points))\
-                and all(map(lambda point: all(map(lambda x: isinstance(x, int), point))), self.points):
-            self.points = []
-            result = False
-            assert False
-        self.points = [tuple(point) for point in self.points]
+        result.points = r.get("geometry", [])
+        if not isinstance(result.points, list)\
+                and all(map(lambda point: isinstance(point, list), result.points))\
+                and all(map(lambda point: all(map(lambda x: isinstance(x, int), point))), result.points):
+            result.points = []
+            raise TypeError(
+                "points expected to be a list of list of two integers."
+            )
+        result.points = [tuple(point) for point in result.points]
 
         try:
-            self.mode = DrawMode[r.get("mode", "NONE")]
+            result.mode = DrawMode[r.get("mode", "NONE")]
         except KeyError:
-            self.mode = DrawMode.NONE
-            assert False
+            result.mode = DrawMode.NONE
+            raise TypeError(f"{r.get('mode', 'NONE')} is invalid drawing mode")
 
-        self.colour = r.get("colour", "#00ff00")
+        result.colour = r.get("colour", "#00ff00")
 
-        self.width = r.get("width", 1)
+        result.width = r.get("width", 1)
         # Error handle width
         return result
 

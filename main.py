@@ -32,7 +32,7 @@ class App:
         """Setup the images, labels, and progress bar (refreshed with new number
         of items."""
         self.bottom_tool_bar.renew_progress_bar()
-        self.workspace.display_image_and_labels(
+        self.workspace.display_image_and_labels_and_bind_keyboard(
             self.backend.image_paths.get_image(),
             self.backend.image_paths.get_label_path(),
         )

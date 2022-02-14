@@ -125,6 +125,12 @@ class CircularBuffer:
             raise IndexError("items is empty")
         return self._items[self._idx]
 
+    def set(self, item):
+        """Set current item."""
+        if not isinstance(item, self._dtype):
+            raise TypeError(f"Expected type {self._dtype}")
+        self._items[self._idx] = item
+
     ####
     #   NEXT AND PREVIOUS
     ####

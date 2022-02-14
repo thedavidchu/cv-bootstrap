@@ -1,3 +1,11 @@
+"""
+TODO
+----
+
+* Come up with better terms for "focused" and "background"
+* Come up with better term for the label's geometry
+"""
+
 import tkinter as tk
 import json
 import time
@@ -82,7 +90,7 @@ class WorkSpace:
         # that change the state of the label name as well as returning the next
         # image. (It changes the app's label path to the new label path and
         # returns the label path as well.) I know this is horrible practice.
-        self.display_image_and_labels(new_image, new_label_path)
+        self.display_image_and_labels_and_bind_keyboard(new_image, new_label_path)
 
     def reset_workspace(self):
         """Reset the workspace to the blank slate."""
@@ -102,15 +110,20 @@ class WorkSpace:
         self.tag_frame = tk.LabelFrame(self.workspace_frame)
         self.tag_frame.pack(anchor=tk.NE, side=tk.RIGHT)
 
+    def display_image_and_labels_and_bind_keyboard(
+        self, image: Image, label_path: str
+    ):
+        self.display_image(image)
+        self.load_labels(label_path)
+        self.bind_keyboard()
+
     def load_labels(self, label_path: str):
         # Try to load the json file
         try:
             with open(label_path) as f:
                 obj = json.load(f)
         except FileNotFoundError:
-            # Not a big deal, it just means we haven't started labelling this
-            # image.
-            warnings.warn("File not found")
+            # No big deal. We just have not started labelling this image.
             return False
 
         if "labels" not in obj:
@@ -120,20 +133,63 @@ class WorkSpace:
             return False
         for raw_label in labels:
             self.goto_new_label()
-            label: Label = self.labels.get()
-            assert label.loads(raw_label)
-            self.set_mode(label.mode)  # Implicitly draws
-            self.set_line_width(label.width)  # Implicitly draws
+            # Set label to values from string
+            try:
+                self.labels.set(Label.loads(raw_label))
+            except TypeError as e:
+                show_error("Type Error when trying to load the labels.")
+                raise e
+            label: Label = self.get_label()
             # TODO replace with `self.set_colour(label.colour)`
             self.background_colour = (
                 label.colour if label.colour else self.background_colour
             )
-            # Redundant
+            # TODO remove redundant drawings
+            # An optimization would be to use
+            # `self.app.bottom_tool_bar.mode.set(label.mode)` and
+            # `self.app.bottom_tool_bar.line_width.set(label.width)` because
+            # they do not redundantly set the stored label to the value we are
+            # getting from it and do not redundantly draw the labels (which is
+            # slow). The downside is that these break the principles of
+            # encapsulation, by accessing external functions, which is not very
+            # future proof.
+            self.set_mode(label.mode)   # Implicitly redraws
+            self.set_line_width(label.width)    # Implicitly redraws
+            # Redundant draw (if the above two functions implicitly draw)
             self.replace_focused(
                 line_colour=self.focus_colour, line_width=label.width
             )
 
         self.goto_next_label()
+
+    def bind_keyboard(self):
+        # Bind user inputs to function
+        self.canvas_frame.bind("<Button-1>", self.handle_click)
+        self.canvas_frame.bind("<B1-Motion>", self.handle_click)
+        # Keyboard commands
+        self.canvas_frame.focus_set()  # Needed to recognize keyboard commands
+        self.canvas_frame.bind("<Right>", self.goto_next_label)
+        self.canvas_frame.bind("<Left>", self.goto_prev_label)
+        self.canvas_frame.bind("<Delete>", self.handle_delete)
+        self.canvas_frame.bind("<Return>", self.goto_new_label)
+        self.canvas_frame.bind("<Control-s>", self.handle_save)
+        self.canvas_frame.bind("<BackSpace>", self.handle_backspace)
+        # External commands
+        self.canvas_frame.bind("<greater>", self.app.next_image)
+        self.canvas_frame.bind("<less>", self.app.prev_image)
+
+    def display_image(self, image: Image):
+        width, height = image.size
+        self.image_size = [height, width]
+        self.canvas_frame = tk.Canvas(
+            master=self.image_frame, width=width, height=height
+        )
+        self.canvas_frame.pack(side=tk.LEFT, anchor=tk.NW)
+
+        # Attach image
+        self.image = ImageTk.PhotoImage(image)
+        self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
+
 
     ############################################################################
 
@@ -517,34 +573,3 @@ class WorkSpace:
         # mode for the next label and redraw line in the "focus" colour
         self.labels.get().mode = draw_mode
         self.set_mode(draw_mode)
-
-    ############################################################################
-
-    def display_image_and_labels(self, image: Image, label_path: str):
-        self.display_image(image)
-        self.load_labels(label_path)
-
-    def display_image(self, image: Image):
-        width, height = image.size
-        self.image_size = [height, width]
-        self.canvas_frame = tk.Canvas(
-            master=self.image_frame, width=width, height=height
-        )
-        self.canvas_frame.pack(side=tk.LEFT, anchor=tk.NW)
-        # Bind user inputs to function
-        self.canvas_frame.bind("<Button-1>", self.handle_click)
-        self.canvas_frame.bind("<B1-Motion>", self.handle_click)
-        # Keyboard commands
-        self.canvas_frame.focus_set()  # Needed to recognize keyboard commands
-        self.canvas_frame.bind("<Right>", self.goto_next_label)
-        self.canvas_frame.bind("<Left>", self.goto_prev_label)
-        self.canvas_frame.bind("<Delete>", self.handle_delete)
-        self.canvas_frame.bind("<Return>", self.goto_new_label)
-        self.canvas_frame.bind("<Control-s>", self.handle_save)
-        self.canvas_frame.bind("<BackSpace>", self.handle_backspace)
-        # External commands
-        self.canvas_frame.bind("<greater>", self.app.next_image)
-        self.canvas_frame.bind("<less>", self.app.prev_image)
-        # Attach image
-        self.image = ImageTk.PhotoImage(image)
-        self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
