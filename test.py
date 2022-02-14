@@ -5,7 +5,7 @@ TEST_IMG_DIR_PATH: str = "data/images/"
 
 
 def delete_jsons():
-    """Delete all jsons associated with the test labels. This file is not called
+    """Delete all JSONs associated with the test labels. This file is not called
     by default."""
     import os
 
@@ -18,12 +18,9 @@ def delete_jsons():
 def main():
     app = m.App()
     app.bottom_tool_bar.line_width.set(1)
-
     # Open image (from main.add_img_dir())
     app.backend.image_paths.load_dir(TEST_IMG_DIR_PATH)
-    app.bottom_tool_bar.renew_progress_bar()
-    app.workspace.display_image(app.backend.image_paths.get_image())
-
+    app.setup_images()
     # Run app
     app.root.mainloop()
 

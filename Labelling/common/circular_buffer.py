@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Type
 
 
 class CircularBuffer:
-    def __init__(self, dtype: type = None):
-        self._dtype: type = dtype
+    def __init__(self, dtype: Type = None):
+        self._dtype: Type = dtype
         self._items: List[dtype] = []
         self._idx: int = 0
 
@@ -19,6 +19,13 @@ class CircularBuffer:
 
     def __len__(self):
         return len(self._items)
+
+    @classmethod
+    def __class_getitem__(cls, item):
+        """Implemented to allow 'CircularBuffer[Type]' to signify this contains
+        the Type as the dtype. However, this is just for show. I am unsure of
+        how one actually implements this."""
+        return cls
 
     def __getitem__(self, key):
         if not isinstance(key, int):

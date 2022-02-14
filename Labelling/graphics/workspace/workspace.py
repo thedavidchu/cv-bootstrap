@@ -62,7 +62,7 @@ class WorkSpace:
         self,
         old_image_path: str,
         old_label_path: str,
-        new_image: str,
+        new_image: Image,
         new_label_path: str,
     ):
         """Public method. Save the current labels (may be unintuitive), change
@@ -82,8 +82,7 @@ class WorkSpace:
         # that change the state of the label name as well as returning the next
         # image. (It changes the app's label path to the new label path and
         # returns the label path as well.) I know this is horrible practice.
-        self.display_image(new_image)
-        self.load_labels(new_label_path)
+        self.display_image_and_labels(new_image, new_label_path)
 
     def reset_workspace(self):
         """Reset the workspace to the blank slate."""
@@ -123,8 +122,8 @@ class WorkSpace:
             self.goto_new_label()
             label: Label = self.labels.get()
             assert label.loads(raw_label)
-            self.set_mode(label.mode)   # Implicitly draws
-            self.set_line_width(label.width)    # Implicitly draws
+            self.set_mode(label.mode)  # Implicitly draws
+            self.set_line_width(label.width)  # Implicitly draws
             # TODO replace with `self.set_colour(label.colour)`
             self.background_colour = (
                 label.colour if label.colour else self.background_colour
@@ -188,15 +187,14 @@ class WorkSpace:
         r = max(1, width // 2)
         point_mark = self.canvas_frame.create_oval(
             x - r, y - r, x + r, y + r, fill=colour,
-            outline="")
+            outline=""
+        )
         self.get_label().marks.append(point_mark)
 
     def draw_line(
         self, x0: int, y0: int, x1: int, y1: int, colour: str, width: int
     ):
         """Draw a point between two points."""
-        label: Label = self.get_label()
-
         # Draw line
         line_mark = self.canvas_frame.create_line(
             x0,
@@ -216,6 +214,8 @@ class WorkSpace:
         colour: str, width: int,
         record_point: bool,
     ):
+        """Draw a point (and optional line) with a given colour and width on the
+        geometry in focus. Optionally record the point as well."""
         if mode == DrawMode.NONE:
             # Do nothing (don't even add point)
             pass
@@ -299,7 +299,10 @@ class WorkSpace:
         else:
             # If there are N points (where N > 1), then there should be either
             # `2 * N - 1` if it is not closed or `2 * N` if it is closed
-            assert num_marks == 2 * num_points - 1 or num_marks == 2 * num_points
+            if num_marks != 2 * num_points - 1:
+                raise ValueError(
+                    f"{num_marks} marks but expected {2 * num_points - 1}"
+                )
             self.canvas_frame.delete(current_label.marks.pop(-1))
             self.canvas_frame.delete(current_label.marks.pop(-1))
 
@@ -310,6 +313,7 @@ class WorkSpace:
         # it is lazy and does not do the execution until we call it.
         for mark in current_label.marks:
             self.canvas_frame.delete(mark)
+        self.get_label().marks = []
 
     def handle_backspace(self, _=None):
         self.delete_one_point()
@@ -325,6 +329,7 @@ class WorkSpace:
         self, line_colour: str, line_width: int,
     ):
         """Draw or redraw the focussed line."""
+        print()
         self.erase_focused()
         mode = self.get_mode()
         prev_x, prev_y = None, None
@@ -340,6 +345,7 @@ class WorkSpace:
             )
             # Remember previous x, y
             prev_x, prev_y = x, y
+        print()
 
     ############################################################################
 
@@ -354,7 +360,8 @@ class WorkSpace:
     def finish_label(self):
         """Finish a label"""
         # Complete polygon, draw partially transparent polygon on canvas
-        if self.get_mode() == DrawMode.POLYGON and len(self.get_label().points) > 1:
+        if self.get_mode() == DrawMode.POLYGON \
+                and len(self.get_label().points) > 1:
             first_x, first_y = self.get_label().points[0]
             last_x, last_y = self.get_label().points[-1]
             # Already connected
@@ -366,7 +373,7 @@ class WorkSpace:
 
     def handle_save(self, _=None):
         self.save(
-            author=self.get_author(),   # Prompts if necessary
+            author=self.get_author(),  # Prompts if necessary
             image_path=self.app.backend.image_paths.get_image_path(),
             label_path=self.app.backend.image_paths.get_label_path(),
         )
@@ -411,14 +418,33 @@ class WorkSpace:
             # object. We want to create an empty json even if no labels were
             # added to mark it as 'done'.
             read_obj = {}
-        if not all(
+        for key in write_obj.keys():
             # Check all _except_ timestamp is identical. If a key is missing in
             # the read_obj, we consider this a mismatch and return False.
-            read_obj[key] == write_obj[key] if key in read_obj else False
-            for key in write_obj.keys() if key != "timestamp"
-        ):
-            with open(label_path, "w") as f:
-                json.dump(obj=write_obj, fp=f, indent=4)
+            if key not in read_obj:
+                break
+            # The timestamp of course will not match and that is ok.
+            elif key == "timestamp":
+                continue
+            elif key == "author":
+                continue
+            # Check that they would match as circular buffers.
+            elif key == "labels":
+                read_buff = CircularBuffer(dict)
+                write_buff = CircularBuffer(dict)
+                read_buff.from_list(read_obj[key])
+                write_buff.from_list((write_obj[key]))
+                if read_buff != write_buff:
+                    break
+            elif read_obj[key] != write_obj[key]:
+                break
+            # Else, read_obj[key] == write_obj[key]!
+        # If no break, this means that there is some inequality and therefore we
+        # need to write.
+        else:
+            return
+        with open(label_path, "w") as f:
+            json.dump(obj=write_obj, fp=f, indent=4)
 
     ############################################################################
 
@@ -494,6 +520,10 @@ class WorkSpace:
 
     ############################################################################
 
+    def display_image_and_labels(self, image: Image, label_path: str):
+        self.display_image(image)
+        self.load_labels(label_path)
+
     def display_image(self, image: Image):
         width, height = image.size
         self.image_size = [height, width]
@@ -505,7 +535,7 @@ class WorkSpace:
         self.canvas_frame.bind("<Button-1>", self.handle_click)
         self.canvas_frame.bind("<B1-Motion>", self.handle_click)
         # Keyboard commands
-        self.canvas_frame.focus_set()   # Needed to recognize keyboard commands
+        self.canvas_frame.focus_set()  # Needed to recognize keyboard commands
         self.canvas_frame.bind("<Right>", self.goto_next_label)
         self.canvas_frame.bind("<Left>", self.goto_prev_label)
         self.canvas_frame.bind("<Delete>", self.handle_delete)

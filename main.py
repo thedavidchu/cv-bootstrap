@@ -28,14 +28,22 @@ class App:
         self.workspace: WorkSpace = WorkSpace(self)
         self.bottom_tool_bar: BottomToolBar = BottomToolBar(self)
 
+    def setup_images(self):
+        """Setup the images, labels, and progress bar (refreshed with new number
+        of items."""
+        self.bottom_tool_bar.renew_progress_bar()
+        self.workspace.display_image_and_labels(
+            self.backend.image_paths.get_image(),
+            self.backend.image_paths.get_label_path(),
+        )
+
     def add_img_dir(self):
         self.backend.image_paths.load_dir(tk_open_dir())
-        self.bottom_tool_bar.renew_progress_bar()
-        self.workspace.display_image(self.backend.image_paths.get_image())
+        self.setup_images()
 
     def add_img_files(self):
         self.backend.image_paths.load_files(tk_open_files())
-        self.workspace.display_image(self.backend.image_paths.get_image())
+        self.setup_images()
 
     def change_image(self, event=None, idx: int = None):
         self.workspace.set_image(
