@@ -39,30 +39,6 @@ class CircularBuffer:
             )
         return self._items[(self._idx + key) % len(self._items)]
 
-    def __iter__(self):
-        self._iteration_start = self._idx
-        self._iteration_idx = 0
-        return self
-
-    def __next__(self):
-        # Adding to the circular buffer during iteration is legal,
-        # however I have not thought through what the behaviour is
-        # like. I was thinking of putting a boolean flag to block the
-        # addition of items during iteration, but this would not be
-        # ideal because if one interrupts the iteration, one would have
-        # to manually reset this flag.
-        if self._iteration_start is None or self._iteration_idx is None:
-            raise ValueError("no iteration loop setup")
-
-        if self._iteration_idx >= len(self._items):
-            raise StopIteration
-        else:
-            r = self._items[
-                (self._iteration_start + self._iteration_idx) % len(self._items)
-            ]
-            self._iteration_idx += 1
-            return r
-
     def __eq__(self, other):
         """Requires other is
             (a) iterable and
