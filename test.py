@@ -18,6 +18,7 @@ def delete_jsons():
 def main():
     app = m.App()
     app.bottom_tool_bar.line_width.set(1)
+    app.backend.author = "Testing, testing, 1-2-3"
     # Open image (from main.add_img_dir())
     app.backend.image_paths.load_dir(TEST_IMG_DIR_PATH)
     app.setup_images()

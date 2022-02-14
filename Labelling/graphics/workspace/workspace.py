@@ -90,7 +90,9 @@ class WorkSpace:
         # that change the state of the label name as well as returning the next
         # image. (It changes the app's label path to the new label path and
         # returns the label path as well.) I know this is horrible practice.
-        self.display_image_and_labels_and_bind_keyboard(new_image, new_label_path)
+        self.display_image_and_labels_and_bind_keyboard(
+            new_image, new_label_path
+        )
 
     def reset_workspace(self):
         """Reset the workspace to the blank slate."""
@@ -190,7 +192,6 @@ class WorkSpace:
         self.image = ImageTk.PhotoImage(image)
         self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
 
-
     ############################################################################
 
     def get_mode(self) -> DrawMode:
@@ -198,6 +199,7 @@ class WorkSpace:
 
     def set_mode(self, new_mode: DrawMode):
         """Change the mode and redraw the line."""
+        new_mode = DrawMode[new_mode]
         self.get_label().set_mode(new_mode)
         # Set the button to the set mode (NOTE: we cannot call a function,
         # because that function may call this one, which would lead to infinite
@@ -341,16 +343,19 @@ class WorkSpace:
         num_marks = len(current_label.marks)
         if num_points == 0:
             # Nothing to delete
-            assert num_marks == 0
+            if num_marks != 0:
+                raise ValueError("expected zero marks")
         elif num_points == 1:
             # If there is a single point, there shall be no connecting line to
             # any other point.
-            assert num_marks == 1
+            if num_marks != 1:
+                raise ValueError("expected one mark")
             self.canvas_frame.delete(current_label.marks.pop(-1))
         # Should this get the mode from the label or from the bottom tool bar?
         elif current_label.mode == DrawMode.POINT:
             # There should be the same number of points as marks
-            assert num_points == num_marks
+            if num_points != num_marks:
+                raise ValueError("expected equal number of points and marks")
             self.canvas_frame.delete(current_label.marks.pop(-1))
         else:
             # If there are N points (where N > 1), then there should be either
@@ -372,12 +377,16 @@ class WorkSpace:
         self.get_label().marks = []
 
     def handle_backspace(self, _=None):
-        self.delete_one_point()
+        # The erasing method checks that the expected ratio of points to marks
+        # exists, so it must go first before any deletions of any points occur.
         self.erase_one_mark()
+        self.delete_one_point()
 
     def handle_delete(self, _=None):
-        self.delete_all_points()
+        # The erasing method checks that the expected ratio of points to marks
+        # exists, so it must go first before any deletions of any points occur.
         self.erase_focused()
+        self.delete_all_points()
 
     ############################################################################
 
@@ -385,7 +394,6 @@ class WorkSpace:
         self, line_colour: str, line_width: int,
     ):
         """Draw or redraw the focussed line."""
-        print()
         self.erase_focused()
         mode = self.get_mode()
         prev_x, prev_y = None, None
@@ -401,7 +409,6 @@ class WorkSpace:
             )
             # Remember previous x, y
             prev_x, prev_y = x, y
-        print()
 
     ############################################################################
 
@@ -474,10 +481,33 @@ class WorkSpace:
             # object. We want to create an empty json even if no labels were
             # added to mark it as 'done'.
             read_obj = {}
+
+        # Local helper functions
+        def same_circular_buffers(read_list, write_list):
+            # Account for the fact that the labels are circular buffers and thus
+            # may be out of order.
+            read_buff = CircularBuffer(dict)
+            write_buff = CircularBuffer(dict)
+            try:
+                read_buff.from_list(read_list)
+                write_buff.from_list(write_list)
+            # If buffers are not empty (they should be) or if there is the wrong
+            # type in the list.
+            except (ValueError, TypeError):
+                return False
+            return read_buff == write_buff
+
+        def write(label_path: str, write_obj):
+            with open(label_path, "w") as f:
+                json.dump(obj=write_obj, fp=f, indent=4)
+
+        # Compare read and write objects for equality (with some special
+        # considerations).
         for key in write_obj.keys():
             # Check all _except_ timestamp is identical. If a key is missing in
             # the read_obj, we consider this a mismatch and return False.
             if key not in read_obj:
+                write(label_path, write_obj)
                 break
             # The timestamp of course will not match and that is ok.
             elif key == "timestamp":
@@ -486,21 +516,17 @@ class WorkSpace:
                 continue
             # Check that they would match as circular buffers.
             elif key == "labels":
-                read_buff = CircularBuffer(dict)
-                write_buff = CircularBuffer(dict)
-                read_buff.from_list(read_obj[key])
-                write_buff.from_list((write_obj[key]))
-                if read_buff != write_buff:
+                if not same_circular_buffers(read_obj[key], write_obj[key]):
+                    write(label_path, write_obj)
                     break
             elif read_obj[key] != write_obj[key]:
+                write(label_path, write_obj)
                 break
             # Else, read_obj[key] == write_obj[key]!
-        # If no break, this means that there is some inequality and therefore we
-        # need to write.
         else:
+            # If no break, this means that there is no inequality and therefore
+            # no need to write.
             return
-        with open(label_path, "w") as f:
-            json.dump(obj=write_obj, fp=f, indent=4)
 
     ############################################################################
 

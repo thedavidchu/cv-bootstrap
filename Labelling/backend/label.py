@@ -1,9 +1,6 @@
-from enum import Enum, auto
+from enum import Enum
 from typing import List, Tuple, Dict, Union
 import warnings
-
-from shapely.geometry import MultiPoint, LineString, Polygon, mapping
-from shapely import wkt
 
 
 class DrawMode(str, Enum):
@@ -72,18 +69,22 @@ class Label:
         if self.mode == DrawMode.NONE:
             warnings.warn("no drawing mode selected")
         elif self.mode in {DrawMode.POINT, DrawMode.LINE, DrawMode.POLYGON}:
-            r = self.points
+            # Convert to lists for JSON (not necessary for storage, but
+            # convenient for comparing it to another freshly loaded JSON if we
+            # want to check for equality because a tuple and list of the same
+            # values do not evaluate as equal).
+            r = [list(point) for point in self.points]
         elif self.mode == DrawMode.SQUARE:
             assert len(self.points) == 2
             (x0, y0), (x1, y1) = self.points
-            r = [(x0, y0), (x0, y1), (x1, y1), (x1, y0)]
+            r = [[x0, y0], [x0, y1], [x1, y1], [x1, y0]]
         else:
             raise NotImplementedError("unsupported drawing mode")
 
         return {
             "category": self.label,
             "geometry": r,
-            "mode": self.mode,
+            "mode": self.mode.value,
             "colour": self.colour,
             "width": self.width,
         }

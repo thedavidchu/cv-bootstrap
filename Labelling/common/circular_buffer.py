@@ -46,6 +46,11 @@ class CircularBuffer:
         This is an O(N^2) algorithm"""
         if len(self._items) != len(other):
             return False
+        # Specific case for returning true if both have zero elements because
+        # this will pass over the for-loop and go directly to the 'return False'
+        # otherwise.
+        elif len(self._items) == 0:
+            return True
         for i, alignment_item in enumerate(other):
             # Finds where items potentially line up and test all the items if
             # they do line up. We use a generator for (hopefully) early exit
@@ -60,8 +65,7 @@ class CircularBuffer:
             # searching.
             # E.g. A = [0 1 0 2] vs B = [0 2 0 1]. These two will line up on the
             # first try, but are not equal until the third try.
-        else:
-            return False
+        return False
 
     ####
     #   IDX METHODS
