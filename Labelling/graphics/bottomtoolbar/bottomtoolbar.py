@@ -48,6 +48,10 @@ class BottomToolBar:
                 DrawMode.POLYGON,
                 lambda: self.app.workspace.set_mode(DrawMode.POLYGON)
             ),
+            "Contour": (
+                DrawMode.CONTOUR,
+                lambda: self.app.workspace.set_mode(DrawMode.CONTOUR)
+            )
         }
         self.radiobutton = []
         for i, (text, (value, cmd)) in enumerate(modes.items()):

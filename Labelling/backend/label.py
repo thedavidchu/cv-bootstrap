@@ -8,6 +8,7 @@ class DrawMode(str, Enum):
     POINT = "POINT"  # Multiple points
     LINE = "LINE"   # A single, continuous line
     POLYGON = "POLYGON"    # A single, closed polygon
+    CONTOUR = "CONTOUR"     # A contour as defined by OpenCV
     SQUARE = "SQUARE"     # A square
 
 
