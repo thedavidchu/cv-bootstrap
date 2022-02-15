@@ -19,6 +19,7 @@ import shapely.geometry as g
 from Labelling.backend.label import DrawMode, Label
 from Labelling.common.circular_buffer import CircularBuffer
 from Labelling.graphics.popup.popup import show_prompt, show_warning, show_error
+from Labelling.graphics.workspace.contour import get_contours
 
 
 class WorkSpace:
@@ -44,8 +45,9 @@ class WorkSpace:
         # bottom tool bar
         self.focus_colour: str = "#ff0000"  # Red
         self.background_colour: str = "#00ff00"  # Green
-        self.image = None
-        self.image_size = None  # Height, width
+        self.pil_image: Image = None
+        self.tk_image: tk.PhotoImage = None
+        self.image_size: List[int] = None  # Height, width
 
     ############################################################################
 
@@ -189,8 +191,9 @@ class WorkSpace:
         self.canvas_frame.pack(side=tk.LEFT, anchor=tk.NW)
 
         # Attach image
-        self.image = ImageTk.PhotoImage(image)
-        self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.image)
+        self.pil_image: Image = image
+        self.tk_image: tk.PhotoImage = ImageTk.PhotoImage(image)
+        self.canvas_frame.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
 
     ############################################################################
 
@@ -304,6 +307,20 @@ class WorkSpace:
             if record_point:
                 self.record_point(x=x, y=y)
             self.draw_point(x=x, y=y, colour=colour, width=width)
+        elif mode == DrawMode.CONTOUR:
+            # Find contours with (x, y) inside (approximate)
+            contours = get_contours(x=x, y=y, pil_image=self.pil_image)
+
+            if not contours:
+                return
+            else:
+                c = contours[0]
+                print(c.shape)
+            prev_x_, prev_y_ = None, None
+            for [[x_, y_]] in c:
+                self.draw(DrawMode.POLYGON, x_, y_, prev_x_, prev_y_, colour, width, record_point)
+                prev_x_, prev_y_ = x_, y_
+            show_error("Contour not finished yet!")
         elif mode == DrawMode.SQUARE:
             show_warning("Square Mode is Not Implemented")
         else:
@@ -318,8 +335,13 @@ class WorkSpace:
             if self.get_label().points
             else (None, None)
         )
+        mode = self.get_mode()
+        # if mode == DrawMode.CONTOUR:
+        #     mode = DrawMode.POLYGON
+        #     contours = get_contours(event.x, event.y, self.pil_image)
+
         self.draw(
-            mode=self.get_mode(),
+            mode=mode,
             x=event.x, y=event.y,
             prev_x=prev_point[0], prev_y=prev_point[1],
             colour=self.focus_colour, width=self.get_line_width(),
