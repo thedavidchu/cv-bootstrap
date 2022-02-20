@@ -8,9 +8,8 @@ def move_files(
     dst_dir: str,
     file_ext: set,
 ):
-    """Given a source and destination path, export the files with
-
-    Keep a copy if desired.
+    """Given a source and destination path, copy the files with a given file
+    extension.
 
     ## Notes
     1. See shutil.copytree(), """
