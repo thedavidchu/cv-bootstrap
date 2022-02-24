@@ -1,26 +1,24 @@
-from cProfile import label
-from lib2to3.pytree import LeafPattern
 from Labelling.config.constants import TEST_IMG_DIR_PATH
 
 import shutil
 import os
 
 
-LABEL_DIR = TEST_IMG_DIR_PATH
-NEW_PATH = os.path.abspath('Labels')
+label_dir = TEST_IMG_DIR_PATH
+new_path = os.path.abspath('Labels')
 
-print(NEW_PATH)
+print(new_path)
 
-for path, dirs, files in os.walk(LABEL_DIR):
+for path, dirs, files in os.walk(label_dir):
     for file in files:
-        if file.endswith('json'):
-            OLD_LOC = os.path.join(path, file)
-            OLD_FOLDER = (os.path.dirname(OLD_LOC).split('\\')[-1])
+        if file.lower().endswith('.json'):
+            old_loc = os.path.join(path, file)
+            old_folder = (os.path.dirname(old_loc).split('\\')[-1])
 
-            NEW_DIR = os.path.join(NEW_PATH, OLD_FOLDER)
-            if not os.path.exists(NEW_DIR):
-                os.mkdir(NEW_DIR)
+            new_dir = os.path.join(new_path, old_folder)
+            if not os.path.exists(new_dir):
+                os.mkdir(new_dir)
 
-            NEW_LOC = os.path.join(NEW_DIR, file)
-            shutil.copyfile(OLD_LOC, NEW_LOC)
+            new_loc = os.path.join(new_dir, file)
+            shutil.copyfile(old_loc, new_loc)
 
