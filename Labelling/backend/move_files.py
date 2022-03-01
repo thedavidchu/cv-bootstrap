@@ -12,7 +12,7 @@ def move_files(
     extension.
 
     ## Notes
-    1. See shutil.copytree(), """
+    1. See shutil.copytree(src, dst, ignore=shutil.include_patterns("*.json")), """
     # Normalize paths
     src_dir = standardize_path(src_dir)
     dst_dir = standardize_path(dst_dir)
@@ -37,13 +37,3 @@ def move_files(
             old_full_path = os.path.join(old_dirpath, fn)
             new_full_path = os.path.join(new_dirpath, fn)
             shutil.copyfile(old_full_path, new_full_path)
-
-
-def main():
-    src = r"C:\Users\theda\PycharmProjects\cv-bootstrap\Labels\a"
-    dst = r"C:\Users\theda\PycharmProjects\cv-bootstrap\Labels\aa"
-    move_files(src, dst)
-
-
-if __name__ == '__main__':
-    main()
